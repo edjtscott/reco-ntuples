@@ -10,6 +10,7 @@
 #include <string>
 #include <sstream>
 #include <vector>
+#include <assert.h>
 #include "TH1.h"
 #include "TH2.h"
 #include "TFile.h"
@@ -34,12 +35,14 @@ class HistSlicer
         HistSlicer( TH2* twoDimHist ) { 
             twoDimHist_ = twoDimHist;
             splitNum_ = 1;
+            if( twoDimHist_ == 0 ) assert( twoDimHist_!=0 && "the 2D hist you are trying to initialise with doesn't exist" );
         }
 
         HistSlicer( TH2* twoDimHist, int splitNum )
         {
             twoDimHist_ = twoDimHist;
             splitNum_ = splitNum;
+            if( twoDimHist_ == 0 ) assert( twoDimHist_!=0 && "the 2D hist you are trying to initialise with doesn't exist" );
         }
         
         void setSplitNum(   int splitNum     ) { splitNum_   = splitNum;   }
@@ -95,10 +98,15 @@ class HistSlicer
 
         vector<TH1D*> getOneDimHists( vector<float> &edges ) const
         {
+            cout << "getting one dim hists with the following edges vector:" << endl;
+            for( auto i : edges ) cout << i << ",  ";
+            cout << endl;
             vector<TH1D*> vecOneDimHists;
 
+            cout << "getting titles" << endl;
             string oldXTitle( twoDimHist_->GetXaxis()->GetTitle() );
             string oldYTitle( twoDimHist_->GetYaxis()->GetTitle() );
+            cout << "got titles" << endl;
 
             int nXBins      = twoDimHist_->GetNbinsX();
             //cout << "nXBins = " << nXBins << endl;
@@ -129,6 +137,7 @@ class HistSlicer
                 string histYTitle = oldXTitle + " from " + NumberToString( xLow ) + " to " + NumberToString( xHigh );
                 vecOneDimHists[histIndex]->GetYaxis()->SetTitle( histYTitle.c_str() );
             }
+            cout << "returning one dim hists" << endl;
             return vecOneDimHists;
         }
 

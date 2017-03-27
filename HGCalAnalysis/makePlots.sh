@@ -41,9 +41,9 @@ OUT1="output_"
 OUT2=".root"
 OUT3=""
 OUTFILE=$OUT1$SAMPLE$OUT2
-echo "Outfile is $OUTFILE"
+echo "Outfile is $OUT1$SAMPLE$OUT2"
 
-PASS="7"
+PASS="9"
 
 # check directory exists then copy plots across
 if [ ! -d ~/www/HGCclustering/Pass${PASS}/$SAMPLE ]

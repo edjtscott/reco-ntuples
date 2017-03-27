@@ -71,23 +71,30 @@ void SetColor(T * obj, int pos, int max)
         colorIndex = (fraction * (1.0-2.0*modifier) + modifier) * gStyle->GetNumberOfColors();
         colour = gStyle->GetColorPalette(colorIndex);
     }
+    cout << "colour = " << colour << endl;
     obj->SetLineColor(colour);
     obj->SetMarkerColor(colour);
 }
 
 void MultiDrawerThree( TCanvas *c, string name, string title, string conversion,  int legendX=1, int legendY=1, int isNum=0, string outdir="HGCPlots/" ) {
   vector<string> ptValues;
-  ptValues.push_back("35");
+  /*ptValues.push_back("35");
   ptValues.push_back("10");
-  ptValues.push_back("5");
+  ptValues.push_back("5");*/
   //ptValues.push_back("2");
+  ptValues.push_back("40mm");
+  ptValues.push_back("50mm");
+  ptValues.push_back("EE2FH4BH4");
+  ptValues.push_back("EE2FH5BH5");
   vector< TGraph* > vecGraphs;
   TMultiGraph *multiGraph = new TMultiGraph();
   for( uint i=0; i<ptValues.size(); i++ ) {
     //string tempFileName = "output_Photon_Pt" + ptValues[i] + "_" + conversion + ".root";
     //string tempFileName = "Output/output_Photon_Pt" + ptValues[i] + "_" + conversion + "_Old.root";
-    string tempFileName = "Output/output_Photon_Pt" + ptValues[i] + "_" + conversion + "_SensorDependent.root";
+    //string tempFileName = "Output/output_Photon_Pt" + ptValues[i] + "_" + conversion + "_SensorDependent.root";
     //string tempFileName = "Output/output_Pion_Pt" + ptValues[i] + "_" + conversion + "_SensorDependent.root";
+    //string tempFileName = "Output/output_Pion_Pt35_" + conversion + "_CartesianCorrected_" + ptValues[i]+ "mm.root";
+    string tempFileName = "Output/output_Pion_Pt35_" + conversion + "_UpdatedEScale_" + ptValues[i]+ ".root";
     TFile *tempFile = new TFile( tempFileName.c_str() );
     vecGraphs.push_back( (TGraph*)tempFile->Get( name.c_str() ) );
     tempFile->Close();
@@ -102,7 +109,8 @@ void MultiDrawerThree( TCanvas *c, string name, string title, string conversion,
   else if( name.find("VsCut") != string::npos ) multiGraph->GetXaxis()->SetTitle("Number of required 2D clusters");
   if( isNum==2 ) {
     multiGraph->SetMinimum(0.);
-    multiGraph->SetMaximum(3.);
+    //multiGraph->SetMaximum(3.);
+    multiGraph->SetMaximum(20.);
     multiGraph->GetYaxis()->SetTitle("Mean number of selected multiclusters");
     multiGraph->GetYaxis()->SetTitleOffset(1.2);
   }
@@ -119,8 +127,11 @@ void MultiDrawerThree( TCanvas *c, string name, string title, string conversion,
     multiGraph->GetYaxis()->SetTitleOffset(1.2);
   }
   else if( isNum==3 ) {
-    multiGraph->SetMinimum(0.);
-    multiGraph->SetMaximum(0.15);
+    //multiGraph->SetMinimum(0.);
+    multiGraph->SetMinimum(0.1);
+    //multiGraph->SetMaximum(0.15);
+    //multiGraph->SetMaximum(0.3);
+    multiGraph->SetMaximum(0.4);
     multiGraph->GetYaxis()->SetTitle("Resolution of gen energy fraction");
     multiGraph->GetYaxis()->SetTitleOffset(1.2);
   }
@@ -130,7 +141,9 @@ void MultiDrawerThree( TCanvas *c, string name, string title, string conversion,
   l->SetBorderSize(0);
   l->SetFillStyle(0);
   for( uint i=0; i<vecGraphs.size(); i++ ) {
-    string legendText = "p_{T} = " + ptValues[i] + " GeV";
+    //string legendText = "p_{T} = " + ptValues[i] + " GeV";
+    //string legendText = "radius = " + ptValues[i] + " mm";
+    string legendText = "radius = " + ptValues[i];
     l->AddEntry( vecGraphs[i], legendText.c_str(), "l" );
   }
   l->Draw();
@@ -161,6 +174,7 @@ int main( int argc, char *argv[] )
   MultiDrawerThree( c, "gRecHitEFracResolutionSelectedVsRadius", "Resolution of gen energy fraction contained by recHits within r cm of any selected multicluster", "Unconverted", 1, 1, 3 );
   */
 
+  /*
   MultiDrawerThree( c, "gNumSelectedVsCut", "Mean number of selected multiclusters vs required number of 2D clusters", "Converted", 1, 1, 2 );
   MultiDrawerThree( c, "gSelectedEnergyVsCut", "Mean fraction of gen energy of selected multiclusters vs required number of 2D clusters", "Converted", 0, 0, 1 );
   MultiDrawerThree( c, "gRecHitEFracMeanVsRadius", "Mean fraction of gen energy contained by recHits within r cm of the gen photon", "Converted", 1, 0 );
@@ -168,8 +182,8 @@ int main( int argc, char *argv[] )
   MultiDrawerThree( c, "gRecHitEFracResolutionBestVsRadius", "Resolution of gen energy fraction contained by recHits within r cm of the best multicluster", "Converted", 1, 1, 3 );
   MultiDrawerThree( c, "gRecHitEFracMeanSelectedVsRadius", "Mean fraction of gen energy contained by recHits within r cm of the selected multiclusters", "Converted", 1, 0 );
   MultiDrawerThree( c, "gRecHitEFracResolutionSelectedVsRadius", "Resolution of gen energy fraction contained by recHits within r cm of any selected multicluster", "Converted", 1, 1, 3 );
+  */
 
-  /*
   MultiDrawerThree( c, "gNumSelectedVsCut", "Mean number of selected multiclusters vs required number of 2D clusters", "All", 1, 1, 2 );
   MultiDrawerThree( c, "gSelectedEnergyVsCut", "Mean fraction of gen energy of selected multiclusters vs required number of 2D clusters", "All", 0, 0, 1 );
   MultiDrawerThree( c, "gRecHitEFracMeanVsRadius", "Mean fraction of gen energy contained by recHits within r cm of the gen photon", "All", 1, 0 );
@@ -177,7 +191,8 @@ int main( int argc, char *argv[] )
   MultiDrawerThree( c, "gRecHitEFracResolutionBestVsRadius", "Resolution of gen energy fraction contained by recHits within r cm of the best multicluster", "All", 1, 1, 3 );
   MultiDrawerThree( c, "gRecHitEFracMeanSelectedVsRadius", "Mean fraction of gen energy contained by recHits within r cm of the selected multiclusters", "All", 1, 0 );
   MultiDrawerThree( c, "gRecHitEFracResolutionSelectedVsRadius", "Resolution of gen energy fraction contained by recHits within r cm of any selected multicluster", "All", 1, 1, 3 );
-  */
+  MultiDrawerThree( c, "gSuperDeltaRresos", "Resolution of gen energy fraction contained by multiclusters within deltaR of x from the best multicluster", "All", 1, 1, 3 );
+  MultiDrawerThree( c, "gSuperDeltaXresos", "Resolution of gen energy fraction contained by multiclusters within x cm of the best multicluster", "All", 1, 1, 3 );
   
   return 0;
 }
