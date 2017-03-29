@@ -1,5 +1,7 @@
 #!/bin/bash
 
+#./makePlots.sh Pion_Pt35 All HigherStats_4cm
+
 #./makePlots.sh Pion_Pt25 All RelValNoPU
 #./makePlots.sh Pion_Pt25 All RelVal140PU
 
