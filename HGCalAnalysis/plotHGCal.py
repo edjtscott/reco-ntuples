@@ -113,10 +113,13 @@ def fitHists(canv,hists,outdir):
   for section in theGraphs.keys():
     theGraphs[section].append(r.TGraph(opts.superClus))
     theGraphs[section][0].SetName('gSuper_%s_mean'%section)
+    theGraphs[section][0].SetTitle('gSuper_%s_mean'%section)
     theGraphs[section].append(r.TGraph(opts.superClus))
     theGraphs[section][1].SetName('gSuper_%s_sigma'%section)
+    theGraphs[section][1].SetTitle('gSuper_%s_sigma'%section)
     theGraphs[section].append(r.TGraph(opts.superClus))
     theGraphs[section][2].SetName('gSuper_%s_res'%section)
+    theGraphs[section][2].SetTitle('gSuper_%s_res'%section)
   for key,hist in hists.iteritems():
     canv.cd() 
     setXTitle(key,hist)
@@ -139,8 +142,17 @@ def fitHists(canv,hists,outdir):
     for graph in graphs:
       canv.cd() 
       canv.Clear() 
-      graph.GetXaxis().SetName('Radius / cm')
-      graph.GetYaxis().SetName(graph.GetName().split('_')[2])
+      graphType = graph.GetName().split('_')[2]
+      graph.GetXaxis().SetTitle('Radius / cm')
+      graph.GetYaxis().SetTitle(graphType)
+      if graphType == 'mean':
+        graph.GetYaxis().SetRangeUser(0.6,0.7)
+        graph.SetLineColor(r.kBlue+2)
+      elif graphType == 'sigma':
+        graph.GetYaxis().SetRangeUser(0.13,0.17)
+      elif graphType == 'res':
+        graph.GetYaxis().SetRangeUser(0.19,0.29)
+        graph.SetLineColor(r.kGreen+2)
       graph.Draw()
       canv.Print(outdir+graph.GetName()+".pdf")
       canv.Print(outdir+graph.GetName()+".png")
@@ -232,7 +244,7 @@ def main():
       multiPts = getattr(theTree,"multiclus_pt")
       multiEnergies = getattr(theTree,"multiclus_energy")
       multiZees = getattr(theTree,"multiclus_z")
-      multiN2Ds = getattr(theTree,"multiclus_cluster2d")
+      multiN2Ds = getattr(theTree,"multiclus_nclus")
       bestMultiIndex = -9999
       bestMultiEnergy = -9999.
       selectedMultiIndices = []
@@ -249,7 +261,8 @@ def main():
         if multiEnergy > bestMultiEnergy:
           bestMultiIndex = iMulti
           bestMultiEnergy = multiEnergy
-        multiN2D = len(multiN2Ds[iMulti])
+        #multiN2D = len(multiN2Ds[iMulti])
+        multiN2D = multiN2Ds[iMulti]
         if multiN2D >= opts.nClus:
           #print "multi with %d 2D being added"%multiN2D
           selectedMultiIndices.append(iMulti)
