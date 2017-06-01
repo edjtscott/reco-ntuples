@@ -94,7 +94,8 @@ void MultiDrawerThree( TCanvas *c, string name, string title, string conversion,
     //string tempFileName = "Output/output_Photon_Pt" + ptValues[i] + "_" + conversion + "_SensorDependent.root";
     //string tempFileName = "Output/output_Pion_Pt" + ptValues[i] + "_" + conversion + "_SensorDependent.root";
     //string tempFileName = "Output/output_Pion_Pt35_" + conversion + "_CartesianCorrected_" + ptValues[i]+ "mm.root";
-    string tempFileName = "Output/output_Pion_Pt35_" + conversion + "_UpdatedEScale_" + ptValues[i]+ ".root";
+    //string tempFileName = "Output/output_Pion_Pt35_" + conversion + "_UpdatedEScale_" + ptValues[i]+ ".root";
+    string tempFileName = "Output/output_Pion_Pt35_" + conversion + "_UpdatedNtuple_" + ptValues[i]+ ".root";
     TFile *tempFile = new TFile( tempFileName.c_str() );
     vecGraphs.push_back( (TGraph*)tempFile->Get( name.c_str() ) );
     tempFile->Close();
@@ -191,8 +192,19 @@ int main( int argc, char *argv[] )
   MultiDrawerThree( c, "gRecHitEFracResolutionBestVsRadius", "Resolution of gen energy fraction contained by recHits within r cm of the best multicluster", "All", 1, 1, 3 );
   MultiDrawerThree( c, "gRecHitEFracMeanSelectedVsRadius", "Mean fraction of gen energy contained by recHits within r cm of the selected multiclusters", "All", 1, 0 );
   MultiDrawerThree( c, "gRecHitEFracResolutionSelectedVsRadius", "Resolution of gen energy fraction contained by recHits within r cm of any selected multicluster", "All", 1, 1, 3 );
+
   MultiDrawerThree( c, "gSuperDeltaRresos", "Resolution of gen energy fraction contained by multiclusters within deltaR of x from the best multicluster", "All", 1, 1, 3 );
   MultiDrawerThree( c, "gSuperDeltaXresos", "Resolution of gen energy fraction contained by multiclusters within x cm of the best multicluster", "All", 1, 1, 3 );
+  MultiDrawerThree( c, "gSuperDeltaXresosEEone", "Resolution of gen energy fraction contained by multiclusters within x cm of the best multicluster", "All", 1, 1, 3 );
+  MultiDrawerThree( c, "gSuperDeltaXresosEEtwo", "Resolution of gen energy fraction contained by multiclusters within x cm of the best multicluster", "All", 1, 1, 3 );
+  MultiDrawerThree( c, "gSuperDeltaXresosFH", "Resolution of gen energy fraction contained by multiclusters within x cm of the best multicluster", "All", 1, 1, 3 );
+  MultiDrawerThree( c, "gSuperDeltaXresosBH", "Resolution of gen energy fraction contained by multiclusters within x cm of the best multicluster", "All", 1, 1, 3 );
+
+  MultiDrawerThree( c, "gSuperDeltaXresos", "Resolution of gen energy fraction contained by multiclusters within x cm of the best multicluster", "Unconverted", 1, 1, 3 );
+  MultiDrawerThree( c, "gSuperDeltaXresosEEone", "Resolution of gen energy fraction contained by multiclusters within x cm of the best multicluster", "Unconverted", 1, 1, 3 );
+  MultiDrawerThree( c, "gSuperDeltaXresosEEtwo", "Resolution of gen energy fraction contained by multiclusters within x cm of the best multicluster", "Unconverted", 1, 1, 3 );
+  MultiDrawerThree( c, "gSuperDeltaXresosFH", "Resolution of gen energy fraction contained by multiclusters within x cm of the best multicluster", "Unconverted", 1, 1, 3 );
+  MultiDrawerThree( c, "gSuperDeltaXresosBH", "Resolution of gen energy fraction contained by multiclusters within x cm of the best multicluster", "Unconverted", 1, 1, 3 );
   
   return 0;
 }

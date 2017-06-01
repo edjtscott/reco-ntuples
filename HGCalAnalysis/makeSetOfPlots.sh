@@ -5,10 +5,24 @@
 #./makePlots.sh Pion_Pt25 All RelValNoPU
 #./makePlots.sh Pion_Pt25 All RelVal140PU
 
-./makePlots.sh Pion_Pt35 All UpdatedEScale_40mm
-./makePlots.sh Pion_Pt35 All UpdatedEScale_50mm
-./makePlots.sh Pion_Pt35 All UpdatedEScale_EE2FH4BH4
-./makePlots.sh Pion_Pt35 All UpdatedEScale_EE2FH5BH5
+#./makePlots.sh Photon_Pt35 Unconverted UpdatedNtuple_20mm
+#./makePlots.sh Photon_Pt35 Converted UpdatedNtuple_20mm
+
+#./makePlots.sh Pion_Pt35 All UpdatedNtuple_40mm
+#./makePlots.sh Pion_Pt35 Unconverted UpdatedNtuple_40mm
+#./makePlots.sh Pion_Pt35 All UpdatedNtuple_50mm
+#./makePlots.sh Pion_Pt35 Unconverted UpdatedNtuple_50mm
+#./makePlots.sh Pion_Pt35 All UpdatedNtuple_EE2FH4BH4
+#./makePlots.sh Pion_Pt35 Unconverted UpdatedNtuple_EE2FH4BH4
+#./makePlots.sh Pion_Pt35 All UpdatedNtuple_EE2FH5BH5
+./makePlots.sh Pion_Pt35 Unconverted UpdatedNtuple_EE2FH5BH5
+
+#./makePlots.sh Photon_Pt35 Unconverted UpdatedEScale_20mm
+#./makePlots.sh Photon_Pt35 Converted UpdatedEScale_20mm
+#./makePlots.sh Pion_Pt35 All UpdatedEScale_40mm
+#./makePlots.sh Pion_Pt35 All UpdatedEScale_50mm
+#./makePlots.sh Pion_Pt35 All UpdatedEScale_EE2FH4BH4
+#./makePlots.sh Pion_Pt35 All UpdatedEScale_EE2FH5BH5
 
 #./makePlots.sh Photon_Pt35 Unconverted UpdatedEScale_20mm
 #./makePlots.sh Photon_Pt35 Converted UpdatedEScale_20mm

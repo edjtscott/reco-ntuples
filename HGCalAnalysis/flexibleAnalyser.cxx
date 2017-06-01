@@ -367,6 +367,27 @@ int main( int argc, char *argv[] )
     string histDesc = "total energy in multiclusters with more than 2 2D clusters and within a distance of " + NumberToString(i*1.) + " cm";
     histsSuperDeltaXEFracs.push_back( new TH1F( histName.c_str(), histDesc.c_str(), 100, 0., 2. ) );
   }
+  vector<vector<TH1*> > histsSuperDeltaXEFracsSubScans(4);
+  for( uint i=0; i<superSize; i++ ) {
+    string histName = "hSuperDeltaXEFracEEscanOne" + NumberToString( i );
+    string histDesc = "total energy in multiclusters with more than 2 2D clusters and within a distance of " + NumberToString(i*1.) + " cm";
+    histsSuperDeltaXEFracsSubScans[0].push_back( new TH1F( histName.c_str(), histDesc.c_str(), 100, 0., 2. ) );
+  }
+  for( uint i=0; i<superSize; i++ ) {
+    string histName = "hSuperDeltaXEFracEEscanTwo" + NumberToString( i );
+    string histDesc = "total energy in multiclusters with more than 2 2D clusters and within a distance of " + NumberToString(i*1.) + " cm";
+    histsSuperDeltaXEFracsSubScans[1].push_back( new TH1F( histName.c_str(), histDesc.c_str(), 100, 0., 2. ) );
+  }
+  for( uint i=0; i<superSize; i++ ) {
+    string histName = "hSuperDeltaXEFracFHscan" + NumberToString( i );
+    string histDesc = "total energy in multiclusters with more than 2 2D clusters and within a distance of " + NumberToString(i*1.) + " cm";
+    histsSuperDeltaXEFracsSubScans[2].push_back( new TH1F( histName.c_str(), histDesc.c_str(), 100, 0., 2. ) );
+  }
+  for( uint i=0; i<superSize; i++ ) {
+    string histName = "hSuperDeltaXEFracBHscan" + NumberToString( i );
+    string histDesc = "total energy in multiclusters with more than 2 2D clusters and within a distance of " + NumberToString(i*1.) + " cm";
+    histsSuperDeltaXEFracsSubScans[3].push_back( new TH1F( histName.c_str(), histDesc.c_str(), 100, 0., 2. ) );
+  }
 
   //const int numClusterCut = 3; // NB this is implemented as > than, NOT >= than.
   const int numClusterCut = 2; // NB this is implemented as > than, NOT >= than.
@@ -425,12 +446,21 @@ int main( int argc, char *argv[] )
     {
       if(debug) cout << "gen particle " << gpIndex << " has energy " << (*genParticles)[gpIndex].energy << endl;
       if(debug) cout << "gen particle " << gpIndex << " has eta "    << (*genParticles)[gpIndex].eta    << endl;
+      if( (*genParticles)[gpIndex].pt < 34.999 ) continue;
+      if(debug) {
+        cout << "gen particle " << gpIndex << " has energy    " << (*genParticles)[gpIndex].energy << endl;
+        cout << "gen particle " << gpIndex << " has pt        "    << (*genParticles)[gpIndex].pt << endl;
+        cout << "gen particle " << gpIndex << " has dvz       "    << (*genParticles)[gpIndex].dvz << endl;
+        cout << "gen particle " << gpIndex << " has reachedEE "    << (*genParticles)[gpIndex].reachedEE << endl;
+        //continue;
+      }
 
       float genEta    = (*genParticles)[gpIndex].eta;
       float genPhi    = (*genParticles)[gpIndex].phi;
       float genEnergy = (*genParticles)[gpIndex].energy;
       float genPt     = (*genParticles)[gpIndex].pt;
       float genDz     = (*genParticles)[gpIndex].dvz;
+      bool  reachedEE = genParticles->at(gpIndex).reachedEE;
       if(debug) cout << "genDz = " << genDz << endl;
 
       // require good containment
@@ -440,9 +470,11 @@ int main( int argc, char *argv[] )
       else if ( abs(genDz) > dvzCut ) hGenUnconv->Fill( abs(genEta) );
       if( testConversion ) {
 	// skip (un)converted events as necessary
-	if( converted    && abs(genDz) > dvzCut ) continue;
-	if( (!converted) && abs(genDz) < dvzCut ) continue;
+	//if( converted    && abs(genDz) > dvzCut ) continue;
+	//if( (!converted) && abs(genDz) < dvzCut ) continue;
+        if( !reachedEE ) continue;
       }
+      //cout << "gen passed cuts" << endl;
 
       hGenEta->Fill( genEta );
       hGenPhi->Fill( genPhi );
@@ -672,23 +704,70 @@ int main( int argc, char *argv[] )
       // do superclustering
       vector<float> superDeltaREFracs(superSize,0.);
       vector<float> superDeltaXEFracs(superSize,0.);
+      vector<float> superDeltaXEFracsEEscanOne(superSize,0.);
+      vector<float> superDeltaXEFracsEEscanTwo(superSize,0.);
+      vector<float> superDeltaXEFracsFHscan(superSize,0.);
+      vector<float> superDeltaXEFracsBHscan(superSize,0.);
+      vector<pair<float,float> > superSubZtoLayerThreshold(4);
+      superSubZtoLayerThreshold[0] = make_pair(335.,2.);
+      superSubZtoLayerThreshold[1] = make_pair(384.,5.);
+      superSubZtoLayerThreshold[2] = make_pair(425.,10.);
+      superSubZtoLayerThreshold[3] = make_pair(999.,15.);
       for( uint superIndex=0; superIndex<vecVecSelectedMultiIndices[2].size(); superIndex++ ) {
         float superEnergy = multiClusters->at(superIndex).energy;
         float superEta = multiClusters->at(superIndex).eta;
         if(superEta*genEta < 0.) continue;
         float superPhi = multiClusters->at(superIndex).phi;
+        float superZ = multiClusters->at(superIndex).z;
         float bestEta = multiClusters->at(matchedMultiClusterIndex).eta;
         float bestPhi = multiClusters->at(matchedMultiClusterIndex).phi;
         float superDeltaR = deltaR(bestEta,superEta,bestPhi,superPhi);
-        float superDeltaX = deltaX( etaPhiZtoX(superEta,superPhi,320.), etaPhiZtoX(bestEta,bestPhi,320.), etaPhiZtoY(superEta,superPhi,320.), etaPhiZtoY(bestEta,bestPhi,320.) );
+        float superDeltaX = deltaX( etaPhiZtoX(superEta,superPhi,superZ), etaPhiZtoX(bestEta,bestPhi,superZ), etaPhiZtoY(superEta,superPhi,superZ), etaPhiZtoY(bestEta,bestPhi,superZ) );
         for( int i_en=0; i_en<superSize; i_en++ ) {
           if( superDeltaR < 0.1*i_en ) superDeltaREFracs[i_en] += superEnergy;
           if( superDeltaX < 1.*i_en ) superDeltaXEFracs[i_en] += superEnergy;
+          // do scans
+          if( superZ < superSubZtoLayerThreshold[0].first ) {
+            if( superDeltaX < 1.*i_en ) superDeltaXEFracsEEscanOne[i_en] += superEnergy;
+            if( superDeltaX < superSubZtoLayerThreshold[0].second ) { 
+              superDeltaXEFracsEEscanTwo[i_en] += superEnergy;
+              superDeltaXEFracsFHscan[i_en] += superEnergy;
+              superDeltaXEFracsBHscan[i_en] += superEnergy;
+            }
+          }
+          else if( superZ < superSubZtoLayerThreshold[1].first ) {
+            if( superDeltaX < 1.*i_en ) superDeltaXEFracsEEscanTwo[i_en] += superEnergy;
+            if( superDeltaX < superSubZtoLayerThreshold[1].second ) { 
+              superDeltaXEFracsEEscanOne[i_en] += superEnergy;
+              superDeltaXEFracsFHscan[i_en] += superEnergy;
+              superDeltaXEFracsBHscan[i_en] += superEnergy;
+            }
+          }
+          else if( superZ < superSubZtoLayerThreshold[2].first ) {
+            if( superDeltaX < 1.*i_en ) superDeltaXEFracsFHscan[i_en] += superEnergy;
+            if( superDeltaX < superSubZtoLayerThreshold[2].second ) { 
+              superDeltaXEFracsEEscanOne[i_en] += superEnergy;
+              superDeltaXEFracsEEscanTwo[i_en] += superEnergy;
+              superDeltaXEFracsBHscan[i_en] += superEnergy;
+            }
+          }
+          else if( superZ < superSubZtoLayerThreshold[3].first ) {
+            if( superDeltaX < 1.*i_en ) superDeltaXEFracsBHscan[i_en] += superEnergy;
+            if( superDeltaX < superSubZtoLayerThreshold[3].second ) { 
+              superDeltaXEFracsEEscanOne[i_en] += superEnergy;
+              superDeltaXEFracsEEscanTwo[i_en] += superEnergy;
+              superDeltaXEFracsFHscan[i_en] += superEnergy;
+            }
+          }
         }
       }
       for( int i_en=0; i_en<superSize; i_en++ ) { 
         histsSuperDeltaREFracs[i_en]->Fill( superDeltaREFracs[i_en] / genEnergy ); 
         histsSuperDeltaXEFracs[i_en]->Fill( superDeltaXEFracs[i_en] / genEnergy ); 
+        histsSuperDeltaXEFracsSubScans[0][i_en]->Fill( superDeltaXEFracsEEscanOne[i_en] / genEnergy ); 
+        histsSuperDeltaXEFracsSubScans[1][i_en]->Fill( superDeltaXEFracsEEscanTwo[i_en] / genEnergy ); 
+        histsSuperDeltaXEFracsSubScans[2][i_en]->Fill( superDeltaXEFracsFHscan[i_en] / genEnergy ); 
+        histsSuperDeltaXEFracsSubScans[3][i_en]->Fill( superDeltaXEFracsBHscan[i_en] / genEnergy ); 
       }
 
       // do selection on contiguous clusters
@@ -1001,6 +1080,14 @@ int main( int argc, char *argv[] )
   gSuperDeltaXwidths->SetName("gSuperDeltaXwidths");
   TGraph* gSuperDeltaXresos = new TGraph(superSize-1);
   gSuperDeltaXresos->SetName("gSuperDeltaXresos");
+  TGraph* gSuperDeltaXresosEEone = new TGraph(superSize-1);
+  gSuperDeltaXresosEEone->SetName("gSuperDeltaXresosEEone");
+  TGraph* gSuperDeltaXresosEEtwo = new TGraph(superSize-1);
+  gSuperDeltaXresosEEtwo->SetName("gSuperDeltaXresosEEtwo");
+  TGraph* gSuperDeltaXresosFH = new TGraph(superSize-1);
+  gSuperDeltaXresosFH->SetName("gSuperDeltaXresosFH");
+  TGraph* gSuperDeltaXresosBH = new TGraph(superSize-1);
+  gSuperDeltaXresosBH->SetName("gSuperDeltaXresosBH");
 
   // draw and save histograms
   if( drawAndSave ) {
@@ -1809,9 +1896,13 @@ int main( int argc, char *argv[] )
     c0->Print("HGCPlots/PrettyPlot5a.pdf");
     c0->Print("HGCPlots/PrettyPlot5a.png");
  
-    gStyle->SetOptStat( 0 );
+    gStyle->SetOptStat( 1 );
     drawAndSaveHists(histsSuperDeltaREFracs,c0);
     drawAndSaveHists(histsSuperDeltaXEFracs,c0);
+    drawAndSaveHists(histsSuperDeltaXEFracsSubScans[0],c0);
+    drawAndSaveHists(histsSuperDeltaXEFracsSubScans[1],c0);
+    drawAndSaveHists(histsSuperDeltaXEFracsSubScans[2],c0);
+    drawAndSaveHists(histsSuperDeltaXEFracsSubScans[3],c0);
 
     for( int i_en=1; i_en<superSize; i_en++ ) { 
       TF1 *fGaus  = new TF1("fGaus", "gaus");
@@ -1826,6 +1917,34 @@ int main( int argc, char *argv[] )
       double mean = fGaus->GetParameter(1);
       double sigma = fGaus->GetParameter(2);
       gSuperDeltaXresos->SetPoint( i_en-1, 1.*i_en, sigma/mean);
+    }
+    for( int i_en=1; i_en<superSize; i_en++ ) { 
+      TF1 *fGaus  = new TF1("fGaus", "gaus");
+      histsSuperDeltaXEFracsSubScans[0][i_en]->Fit( fGaus );
+      double mean = fGaus->GetParameter(1);
+      double sigma = fGaus->GetParameter(2);
+      gSuperDeltaXresosEEone->SetPoint( i_en-1, 1.*i_en, sigma/mean);
+    }
+    for( int i_en=1; i_en<superSize; i_en++ ) { 
+      TF1 *fGaus  = new TF1("fGaus", "gaus");
+      histsSuperDeltaXEFracsSubScans[1][i_en]->Fit( fGaus );
+      double mean = fGaus->GetParameter(1);
+      double sigma = fGaus->GetParameter(2);
+      gSuperDeltaXresosEEtwo->SetPoint( i_en-1, 1.*i_en, sigma/mean);
+    }
+    for( int i_en=1; i_en<superSize; i_en++ ) { 
+      TF1 *fGaus  = new TF1("fGaus", "gaus");
+      histsSuperDeltaXEFracsSubScans[2][i_en]->Fit( fGaus );
+      double mean = fGaus->GetParameter(1);
+      double sigma = fGaus->GetParameter(2);
+      gSuperDeltaXresosFH->SetPoint( i_en-1, 1.*i_en, sigma/mean);
+    }
+    for( int i_en=1; i_en<superSize; i_en++ ) { 
+      TF1 *fGaus  = new TF1("fGaus", "gaus");
+      histsSuperDeltaXEFracsSubScans[3][i_en]->Fit( fGaus );
+      double mean = fGaus->GetParameter(1);
+      double sigma = fGaus->GetParameter(2);
+      gSuperDeltaXresosBH->SetPoint( i_en-1, 1.*i_en, sigma/mean);
     }
     
     cout << "\n\n-------------------INFO FOR TABLES-------------------" << endl << endl;
@@ -1939,6 +2058,10 @@ int main( int argc, char *argv[] )
     gSelectedEnergyVsCut->Write();
     gSuperDeltaRresos->Write();
     gSuperDeltaXresos->Write();
+    gSuperDeltaXresosEEone->Write();
+    gSuperDeltaXresosEEtwo->Write();
+    gSuperDeltaXresosFH->Write();
+    gSuperDeltaXresosBH->Write();
 
     writeHists( vecRecHitEnergyRadiusHists );
     writeHists( vecRecHitEnergyBestHists );
