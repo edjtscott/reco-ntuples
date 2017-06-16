@@ -5,10 +5,15 @@ PART="Pion"
 
 PT="35"
 
+#NAME=""
 #NAME="AcceptedPR"
-NAME="AcceptedPR_EE2FH5BH5"
+#NAME="AcceptedPR_EE2FH5BH5"
 #NAME="PU200_AcceptedPR"
 #NAME="PU200_AcceptedPR_EE2FH5BH5"
+#NAME="D17"
+#NAME="PU200_D17"
+NAME="D17_255_225"
+#NAME="PU200_D17_255_225"
 
 #INFILE="/afs/cern.ch/work/e/escott/public/HGCStudies/Ntuples/FromClemens_${PART}_Pt${PT}.root"
 INFILE="/afs/cern.ch/work/e/escott/public/HGCStudies/Ntuples/partGun_${PART}_Pt${PT}_${NAME}.root"
