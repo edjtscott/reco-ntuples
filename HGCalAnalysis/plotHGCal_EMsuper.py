@@ -388,8 +388,9 @@ def main():
           scanEnergies[key].append(bestMultiEnergy)
      
       #loop over selected multis again for superclustering
-      #idea is to add together the multis within a default distance of 30cm, 
-      #then tightening that threshold on each subdetector individually
+      #idea is to add together the multis within an eta-phi road
+      #dphi proportional to cylindrical radius
+      #deta not understood yet
       suggestedEnergy = bestMultiEnergy
       suggestedRadii = {'EEfirst':2.,'EEsecond':10.,'FH':15.,'BH':15.}
       for iSel in selectedMultiIndices:
