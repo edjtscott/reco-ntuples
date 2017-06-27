@@ -1,6 +1,7 @@
 import ROOT as r
 import os
-from math import exp,cos,sin,sqrt,atan
+import sys
+from math import exp,cos,sin,tan,sqrt,atan,log
 
 
 from optparse import OptionParser
@@ -12,8 +13,9 @@ parser.add_option("-w","--webDir",default="")
 parser.add_option("-p","--particleType",default="Photon")
 parser.add_option("-m","--ptVal",default="35")
 parser.add_option("-e","--ext",default="UpdatedNtuple_20mm")
+parser.add_option("--etaWindow",type="float",default=0.05,help="if less than one, just the eta window. If greater than one, the number of cm the window should correspond to")
 parser.add_option("-n","--nClus",type="int",default=3,help="min number of 2D clusters for a multicluster to be included in sums. Default is three")
-parser.add_option("-s","--superClus",type="int",default=30,help="set baseline superclustering radius. Default is thirty")
+parser.add_option("-s","--superClus",type="int",default=30,help="set number of points to scan for superclustering. Default is thirty")
 parser.add_option("-c","--doConverted",type="int",default=0,help="for photons: set to one to only plot unconverted, two for unconverted. Default is zero (all)")
 parser.add_option("-b","--doBasics",dest="doBasics",default=False,action="store_true",help="make basic plots with no cuts applied")
 parser.add_option("--endText",dest="endText",default="\n",help="text to print at end")
@@ -68,7 +70,7 @@ def makeOutDir(thedir,index=True):
   if not os.path.exists(thedir): 
     os.makedirs(thedir)
   if not os.path.isfile(thedir+'index.php'): 
-    if index: os.system('cp /afs/cern.ch/user/e/escott/www/HGCclustering/FixClusteringTest/index.php %s'%thedir)
+    if index: os.system('cp /afs/cern.ch/user/e/escott/www/HGCclustering/Pass23/index.php %s'%thedir)
 
 def initGenHists():
   pass
@@ -92,10 +94,9 @@ def initMultiHists():
   enLow  = 0.
   enHigh = 0.
   for i in range(1,opts.superClus+1):
-    hists['superEnFrac_EEfirst%d'%i] = r.TH1F('hMulti_superEnFrac_EEfirst%d'%i,'hMulti_superEnFrac_EEfirst%d'%i,enBins,enLow,enHigh)
-    hists['superEnFrac_EEsecond%d'%i] = r.TH1F('hMulti_superEnFrac_EEsecond%d'%i,'hMulti_superEnFrac_EEsecond%d'%i,enBins,enLow,enHigh)
-    hists['superEnFrac_FH%d'%i] = r.TH1F('hMulti_superEnFrac_FH%d'%i,'hMulti_superEnFrac_FH%d'%i,enBins,enLow,enHigh)
-    hists['superEnFrac_BH%d'%i] = r.TH1F('hMulti_superEnFrac_BH%d'%i,'hMulti_superEnFrac_BH%d'%i,enBins,enLow,enHigh)
+    #phiStep = 0.05
+    #i *= phiStep
+    hists['superEnFrac_%d'%i] = r.TH1F('hMulti_superEnFrac_%d'%i,'hMulti_superEnFrac_%d'%i,enBins,enLow,enHigh)
 
   return hists
 
@@ -133,17 +134,22 @@ def printHists(canv,hists,outdir):
     canv.Print(outdir+hist.GetName()+".png")
 
 def fitHists(canv,hists,outdir):
-  theGraphs = {'EEfirst':[],'EEsecond':[],'FH':[],'BH':[]}
-  for section in theGraphs.keys():
-    theGraphs[section].append(r.TGraph(opts.superClus))
-    theGraphs[section][0].SetName('gSuper_%s_mean'%section)
-    theGraphs[section][0].SetTitle('gSuper_%s_mean'%section)
-    theGraphs[section].append(r.TGraph(opts.superClus))
-    theGraphs[section][1].SetName('gSuper_%s_sigma'%section)
-    theGraphs[section][1].SetTitle('gSuper_%s_sigma'%section)
-    theGraphs[section].append(r.TGraph(opts.superClus))
-    theGraphs[section][2].SetName('gSuper_%s_res'%section)
-    theGraphs[section][2].SetTitle('gSuper_%s_res'%section)
+  theGraphs = []
+  theGraphs.append(r.TGraph(opts.superClus))
+  theGraphs[0].SetName('gSuper_mean')
+  theGraphs[0].SetTitle('gSuper_mean')
+  theGraphs.append(r.TGraph(opts.superClus))
+  theGraphs[1].SetName('gSuper_sigma')
+  theGraphs[1].SetTitle('gSuper_sigma')
+  theGraphs.append(r.TGraph(opts.superClus))
+  theGraphs[2].SetName('gSuper_sigmaEff')
+  theGraphs[2].SetTitle('gSuper_sigmaEff')
+  theGraphs.append(r.TGraph(opts.superClus))
+  theGraphs[3].SetName('gSuper_res')
+  theGraphs[3].SetTitle('gSuper_res')
+  theGraphs.append(r.TGraph(opts.superClus))
+  theGraphs[4].SetName('gSuper_resEff')
+  theGraphs[4].SetTitle('gSuper_resEff')
   for key,hist in hists.iteritems():
     canv.cd() 
     setXTitle(key,hist)
@@ -155,38 +161,44 @@ def fitHists(canv,hists,outdir):
     sigma = fit.GetParameter(2)
     effSigma = getEffSigma(hist)
     if 'total' in key or 'Pf' in key or 'suggested' in key:
-      opts.endText += "For hist %s the mean is %1.2f and the width is %1.2f\n"%(key,mean,sigma)
-      opts.endText += "hence resolution is %1.2f\n"%(sigma/mean)
-      opts.endText += "and effSigma is %1.2f\n\n"%(effSigma)
-    for section in theGraphs.keys():
-      if 'super' in key and section in key:
-        point = int(key.split(section)[1])
-        theGraphs[section][0].SetPoint( point-1, point, mean )
-        theGraphs[section][1].SetPoint( point-1, point, sigma )
-        if mean > 0.:
-          theGraphs[section][2].SetPoint( point-1, point, sigma / mean )
-        else:
-          theGraphs[section][2].SetPoint( point-1, point, 1. )
-  for section,graphs in theGraphs.iteritems():
-    for graph in graphs:
-      canv.cd() 
-      canv.Clear() 
-      graphType = graph.GetName().split('_')[2]
-      graph.GetXaxis().SetTitle('Radius / cm')
-      graph.GetYaxis().SetTitle(graphType)
-      if graphType == 'mean':
-        graph.GetYaxis().SetRangeUser(0.6,0.7)
-        graph.SetLineColor(r.kBlue+2)
-      elif graphType == 'sigma':
-        graph.GetYaxis().SetRangeUser(0.13,0.17)
-      elif graphType == 'res':
-        graph.GetYaxis().SetRangeUser(0.18,0.28)
-        graph.SetLineColor(r.kGreen+2)
-      graph.Draw()
-      canv.Print(outdir+graph.GetName()+".pdf")
-      canv.Print(outdir+graph.GetName()+".png")
+      opts.endText += "For hist %s the mean is %1.3f and the width is %1.3f\n"%(key,mean,sigma)
+      if mean>0.: opts.endText += "hence resolution is %1.3f\n"%(sigma/mean)
+      else: opts.endText += "mean is zero..."
+      opts.endText += "and effSigma is %1.3f\n\n"%(effSigma)
+    if 'super' in key:
+      point = int(key.split('_')[1])
+      phiStep = 0.05
+      pointVal = point*phiStep
+      theGraphs[0].SetPoint( point-1, pointVal, mean )
+      theGraphs[1].SetPoint( point-1, pointVal, sigma )
+      theGraphs[2].SetPoint( point-1, pointVal, effSigma )
+      if mean > 0.:
+        theGraphs[3].SetPoint( point-1, pointVal, sigma / mean )
+        theGraphs[4].SetPoint( point-1, pointVal, effSigma / mean )
+      else:
+        theGraphs[3].SetPoint( point-1, pointVal, -1. )
+        theGraphs[4].SetPoint( point-1, pointVal, -1. )
+  for iGr in range(len(theGraphs)):
+    canv.cd() 
+    canv.Clear() 
+    graph = theGraphs[iGr]
+    graphType = graph.GetName().split('_')[1]
+    graph.GetXaxis().SetTitle('#alpha')
+    graph.GetYaxis().SetTitle(graphType)
+    if 'mean' in graphType:
+      graph.GetYaxis().SetRangeUser(0.5,1.2)
+      graph.SetLineColor(r.kBlue+2)
+    elif 'sigma' in graphType:
+      graph.GetYaxis().SetRangeUser(0.,0.2)
+    elif 'res' in graphType:
+      graph.GetYaxis().SetRangeUser(0.,0.2)
+      graph.SetLineColor(r.kGreen+2)
+    graph.Draw()
+    canv.Print(outdir+graph.GetName()+".pdf")
+    canv.Print(outdir+graph.GetName()+".png")
 
-def getEffSigma( theHist, wmin=0.2, wmax=1.8, step=0.0002, epsilon=0.005 ):
+#def getEffSigma( theHist, wmin=0.2, wmax=1.8, step=0.0002, epsilon=0.005 ):
+def getEffSigma( theHist, wmin=0.1, wmax=2.8, step=0.0002, epsilon=0.005 ):
   point = wmin
   weight = 0.
   points = [] #vector<pair<double,double> > 
@@ -236,6 +248,12 @@ def etasPhisZsToDeltaX(eta1,eta2,phi1,phi2,z1,z2):
 def cot(val):
   return cos(val)/sin(val)
 
+def etaToTheta(val):
+  return 2 * atan( exp(-1*val) )
+
+def thetaToEta(val):
+  return -1 * log( tan(val/2.) )
+
 
 def main():
   r.gROOT.SetBatch(True)
@@ -269,6 +287,7 @@ def main():
 
   #loop over entries in tree and actully do things
   for iEntry in range(theTree.GetEntries()):
+  #for iEntry in range(100):
     #setup gen values
     if iEntry%100==0 or iEntry==0: print "Processing entry %d"%iEntry
     theTree.GetEntry(iEntry)
@@ -369,9 +388,14 @@ def main():
       #end multi loop
       multiHists['bestEnFrac'].Fill(bestMultiEnergy/genEnergy)
       multiHists['totalEnFrac'].Fill(totalMultiEnergy/genEnergy)
+
       bestMultiZ = multiZees[bestMultiIndex]
       bestMultiPhi = multiPhis[bestMultiIndex]
       bestMultiEta = multiEtas[bestMultiIndex]
+      bestMultiTheta = etaToTheta(bestMultiEta) #following are used in superclustering
+      bestMultiRho = deltaX( etaPhiZtoX(bestMultiEta,bestMultiPhi,bestMultiZ), 0., etaPhiZtoY(bestMultiEta,bestMultiPhi,bestMultiZ), 0. )
+      bestMultiR = sqrt( bestMultiZ*bestMultiZ + bestMultiRho*bestMultiRho )
+
       multiHists['drGenBestAtFace'].Fill( etasPhisZsToDeltaX(genEta,bestMultiEta,genPhi,bestMultiPhi,320.,320.) )
       multiHists['drGenBestAtBestZ'].Fill( etasPhisZsToDeltaX(genEta,bestMultiEta,genPhi,bestMultiPhi,bestMultiZ,bestMultiZ) )
       #dPhi = q*B*dZ/pZ; prefactor is the conversion of GeV to normal units
@@ -382,17 +406,19 @@ def main():
 
       #setup superclustering
       numSuperPoints = opts.superClus
-      scanEnergies = {'EEfirst':[-9999.],'EEsecond':[-9999.],'FH':[-9999.],'BH':[-9999.]}
-      for key in scanEnergies.keys():
-        for i in range(numSuperPoints):
-          scanEnergies[key].append(bestMultiEnergy)
+      phiStep = 0.05
+      scanPhis = []
+      scanEnergies = []
+      recipRho = 1. / deltaX( etaPhiZtoX(1.5,0.,bestMultiZ), 0., etaPhiZtoY(1.5,0.,bestMultiZ), 0. )  #want radius at eta=1.5 for best multicluster z
+      #print "recipRho",recipRho
+      for iPhi in range(1,numSuperPoints+1):
+        scanPhis.append( phiStep * iPhi)
+        scanEnergies.append(bestMultiEnergy)
      
       #loop over selected multis again for superclustering
       #idea is to add together the multis within an eta-phi road
       #dphi proportional to cylindrical radius
       #deta not understood yet
-      suggestedEnergy = bestMultiEnergy
-      suggestedRadii = {'EEfirst':2.,'EEsecond':10.,'FH':15.,'BH':15.}
       for iSel in selectedMultiIndices:
         multiEta = multiEtas[iSel]
         if multiEta*genEta < 0.:
@@ -401,59 +427,30 @@ def main():
           continue
         multiZ = multiZees[iSel]
         multiPhi = multiPhis[iSel]
-        deltaX = etasPhisZsToDeltaX(multiEta,bestMultiEta,multiPhi,bestMultiPhi,multiZ,bestMultiZ) #FIXME check this works
-        #print "multiEta,multiPhi,multiZ",multiEta,multiPhi,multiZ
-        #print "bestEta,bestPhi,bestZ",bestMultiEta,bestMultiPhi,bestMultiZ
-        #print "deltaX",deltaX
         multiEnergy = multiEnergies[iSel]
-        for ncm in range(1,numSuperPoints+1):
-          if abs(multiZ) < 335.:
-            if deltaX < float(ncm):
-              #print deltaX,float(ncm)
-              #print "debug A"
-              #print deltaX,multiZ,multiEnergy
-              scanEnergies['EEfirst'][ncm] += multiEnergy
-              #print bestMultiEnergy,scanEnergies['EEfirst'][ncm]
-            if deltaX < float(numSuperPoints):
-              #print deltaX,float(ncm)
-              scanEnergies['EEsecond'][ncm] += multiEnergy
-              scanEnergies['FH'][ncm] += multiEnergy
-              scanEnergies['BH'][ncm] += multiEnergy
-            if ncm==1 and deltaX < suggestedRadii['EEfirst']: suggestedEnergy += multiEnergy
-          elif abs(multiZ) < 384.:
-            if deltaX < float(ncm):
-              scanEnergies['EEsecond'][ncm] += multiEnergy
-            if deltaX < float(numSuperPoints):
-              scanEnergies['EEfirst'][ncm] += multiEnergy
-              scanEnergies['FH'][ncm] += multiEnergy
-              scanEnergies['BH'][ncm] += multiEnergy
-            if ncm==1 and deltaX < suggestedRadii['EEsecond']: suggestedEnergy += multiEnergy
-          elif abs(multiZ) < 425.:
-            if deltaX < float(ncm):
-              scanEnergies['FH'][ncm] += multiEnergy
-            if deltaX < float(numSuperPoints):
-              scanEnergies['EEfirst'][ncm] += multiEnergy
-              scanEnergies['EEsecond'][ncm] += multiEnergy
-              scanEnergies['BH'][ncm] += multiEnergy
-            if ncm==1 and deltaX < suggestedRadii['FH']: suggestedEnergy += multiEnergy
-          elif abs(multiZ) < 999.:
-            if deltaX < float(ncm):
-              scanEnergies['BH'][ncm] += multiEnergy
-            if deltaX < float(numSuperPoints):
-              scanEnergies['EEfirst'][ncm] += multiEnergy
-              scanEnergies['EEsecond'][ncm] += multiEnergy
-              scanEnergies['FH'][ncm] += multiEnergy
-            if ncm==1 and deltaX < suggestedRadii['BH']: suggestedEnergy += multiEnergy
+        multiRho = deltaX( etaPhiZtoX(multiEta,multiPhi,multiZ), 0., etaPhiZtoY(multiEta,multiPhi,multiZ), 0. )
+        dEta = abs(multiEta - bestMultiEta)
+        dPhi = abs(multiPhi - bestMultiPhi)
+        #want the dEta criterion to correspond to ~2cm (as first guess, now configurable)
+        etaThreshold = 0.05
+        if opts.etaWindow > 1.:
+          etaCm = opts.etaWindow
+          thetaThreshold = etaCm / bestMultiR
+          etaThreshold = thetaToEta( bestMultiTheta + 0.5*thetaThreshold ) - thetaToEta ( bestMultiTheta - 0.5*thetaThreshold )
+          etaThreshold = abs(etaThreshold)
+        if dEta < etaThreshold:
+          for iPhi in range(len(scanPhis)):
+            phiThreshold = scanPhis[iPhi] * multiRho * recipRho
+            if dPhi < phiThreshold:
+              scanEnergies[iPhi] += multiEnergy
 
       #end superclustering loop
-      for icm in range(1,numSuperPoints+1):
-        #print scanEnergies['EEfirst'][icm]
-        #print genEnergy
-        multiHists['superEnFrac_EEfirst%d'%icm].Fill( scanEnergies['EEfirst'][icm] / genEnergy )
-        multiHists['superEnFrac_EEsecond%d'%icm].Fill( scanEnergies['EEsecond'][icm] / genEnergy )
-        multiHists['superEnFrac_FH%d'%icm].Fill( scanEnergies['FH'][icm] / genEnergy )
-        multiHists['superEnFrac_BH%d'%icm].Fill( scanEnergies['BH'][icm] / genEnergy )
-      multiHists['suggestedEnFrac'].Fill( suggestedEnergy / genEnergy )
+      for iPhi in range(len(scanPhis)):
+        multiHists['superEnFrac_%d'%(iPhi+1)].Fill( scanEnergies[iPhi] / genEnergy )
+        multiHists['superEnFrac_%d'%(iPhi+1)].Fill( scanEnergies[iPhi] / genEnergy )
+        multiHists['superEnFrac_%d'%(iPhi+1)].Fill( scanEnergies[iPhi] / genEnergy )
+        multiHists['superEnFrac_%d'%(iPhi+1)].Fill( scanEnergies[iPhi] / genEnergy )
+      #multiHists['suggestedEnFrac'].Fill( suggestedEnergy / genEnergy )
 
     #end gen loop
 

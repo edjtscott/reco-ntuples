@@ -68,7 +68,7 @@ def makeOutDir(thedir,index=True):
   if not os.path.exists(thedir): 
     os.makedirs(thedir)
   if not os.path.isfile(thedir+'index.php'): 
-    if index: os.system('cp /afs/cern.ch/user/e/escott/www/HGCclustering/FixClusteringTest/index.php %s'%thedir)
+    if index: os.system('cp /afs/cern.ch/user/e/escott/www/HGCclustering/Pass23/index.php %s'%thedir)
 
 def initGenHists():
   pass
