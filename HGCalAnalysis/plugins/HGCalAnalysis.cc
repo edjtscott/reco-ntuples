@@ -1031,10 +1031,10 @@ HGCalAnalysis::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
 		// save info in tree
 		track_pt.push_back(it_track->pt());
-		track_pt.push_back(it_track->eta());
-		track_pt.push_back(it_track->phi());
-		track_pt.push_back(energy);
-		track_pt.push_back(it_track->charge());
+		track_eta.push_back(it_track->eta());
+		track_phi.push_back(it_track->phi());
+		track_energy.push_back(energy);
+		track_charge.push_back(it_track->charge());
 		track_posx.push_back(xp);
 		track_posy.push_back(yp);
 		track_posz.push_back(zp);
@@ -1091,8 +1091,8 @@ void HGCalAnalysis::retrieveLayerPositions(const edm::EventSetup& es, unsigned l
 
 	DetId id;
 	for(unsigned ilayer=1; ilayer<=layers; ++ilayer) {
-		if (ilayer<=28) id=HGCalDetId(ForwardSubdetector::HGCEE,1,ilayer,1,2,1);
-		if (ilayer>28 && ilayer<=40) id=HGCalDetId(ForwardSubdetector::HGCHEF,1,ilayer-28,1,2,1);
+		if (ilayer<=28) id=HGCalDetId(ForwardSubdetector::HGCEE,1,ilayer,1,50,1);
+		if (ilayer>28 && ilayer<=40) id=HGCalDetId(ForwardSubdetector::HGCHEF,1,ilayer-28,1,50,1);
 		if (ilayer>40) id=HcalDetId(HcalSubdetector::HcalEndcap, 50, 100, ilayer-40);
 		const GlobalPoint pos = recHitTools.getPosition(id);
 		// std::cout << "GEOM " ;
