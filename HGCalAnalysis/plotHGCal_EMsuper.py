@@ -78,8 +78,6 @@ def initGenHists():
 def initMultiHists():
   hists = {}
  
-  #hists['bestEnFrac'] = r.TH1F('hMulti_bestEnFrac','hMulti_bestEnFrac',100,0.,2.)
-  #hists['bestPfEnFrac'] = r.TH1F('hMulti_bestEnFrac','hMulti_bestEnFrac',100,0.,2.)
   hists['nMultis'] = r.TH1F('hMulti_nMultis','hMulti_nMultis',51,-0.5,50.5)
   hists['nSeedMultis'] = r.TH1F('hMulti_nSeedMultis','hMulti_nSeedMultis',51,-0.5,50.5)
   hists['bestEnFrac'] = r.TH1F('hMulti_bestEnFrac','hMulti_bestEnFrac',100,1.,0.)
@@ -114,6 +112,7 @@ def initMultiHists():
   hists['superEnFrac_Alt404'] = r.TH1F('hMulti_superEnFrac_Alt404','hMulti_superEnFrac_Alt404',100,1.,0.)
   hists['fourNotTwoHitsLayer'] = r.TH1F('hMulti_fourNotTwoHitsLayer','hMulti_fourNotTwoHitsLayer',53,-0.5,52.5)
   hists['fourNotTwoHitsLayerWeighted'] = r.TH1F('hMulti_fourNotTwoHitsLayerWeighted','hMulti_fourNotTwoHitsLayerWeighted',53,-0.5,52.5)
+
   hists['theSCvars_rechits'] = r.TH2F('hMulti_theSCvars_rechits','hMulti_theSCvars_rechits',20,-1.,1.,20,-5.,5.)
   hists['theSCvarsWeighted_rechits'] = r.TH2F('hMulti_theSCvarsWeighted_rechits','hMulti_theSCvarsWeighted_rechits',20,-1.,1.,20,-5.,5.)
   hists['notInSCEnFrac_rechits'] = r.TH1F('hMulti_notInSCEnFrac_rechits','hMulti_notInSCEnFrac_rechits',100,1.,0.)
@@ -127,7 +126,22 @@ def initMultiHists():
   hists['theSCvars_multisForward'] = r.TH2F('hMulti_theSCvars_multisForward','hMulti_theSCvars_multisForward',20,-1.,1.,20,-5.,5.)
   hists['theSCvarsWeighted_multisForward'] = r.TH2F('hMulti_theSCvarsWeighted_multisForward','hMulti_theSCvarsWeighted_multisForward',20,-1.,1.,20,-5.,5.)
   hists['notInSCsingleMultisForward'] = r.TH1F('hMulti_notInSCsingleMultisForward','hMulti_notInSCsingleMultisForward',100,1.,0.)
+  hists['theSCvars_multisRegion0'] = r.TH2F('hMulti_theSCvars_multisRegion0','hMulti_theSCvars_multisRegion0',20,-1.,1.,20,-5.,5.)
+  hists['theSCvarsWeighted_multisRegion0'] = r.TH2F('hMulti_theSCvarsWeighted_multisRegion0','hMulti_theSCvarsWeighted_multisRegion0',20,-1.,1.,20,-5.,5.)
+  hists['notInSCsingleMultisRegion0'] = r.TH1F('hMulti_notInSCsingleMultisRegion0','hMulti_notInSCsingleMultisRegion0',100,1.,0.)
+  hists['theSCvars_multisRegion1'] = r.TH2F('hMulti_theSCvars_multisRegion1','hMulti_theSCvars_multisRegion1',20,-1.,1.,20,-5.,5.)
+  hists['theSCvarsWeighted_multisRegion1'] = r.TH2F('hMulti_theSCvarsWeighted_multisRegion1','hMulti_theSCvarsWeighted_multisRegion1',20,-1.,1.,20,-5.,5.)
+  hists['notInSCsingleMultisRegion1'] = r.TH1F('hMulti_notInSCsingleMultisRegion1','hMulti_notInSCsingleMultisRegion1',100,1.,0.)
+  hists['theSCvars_multisRegion2'] = r.TH2F('hMulti_theSCvars_multisRegion2','hMulti_theSCvars_multisRegion2',20,-1.,1.,20,-5.,5.)
+  hists['theSCvarsWeighted_multisRegion2'] = r.TH2F('hMulti_theSCvarsWeighted_multisRegion2','hMulti_theSCvarsWeighted_multisRegion2',20,-1.,1.,20,-5.,5.)
+  hists['notInSCsingleMultisRegion2'] = r.TH1F('hMulti_notInSCsingleMultisRegion2','hMulti_notInSCsingleMultisRegion2',100,1.,0.)
+  hists['theSCvars_multisRegion3'] = r.TH2F('hMulti_theSCvars_multisRegion3','hMulti_theSCvars_multisRegion3',20,-1.,1.,20,-5.,5.)
+  hists['theSCvarsWeighted_multisRegion3'] = r.TH2F('hMulti_theSCvarsWeighted_multisRegion3','hMulti_theSCvarsWeighted_multisRegion3',20,-1.,1.,20,-5.,5.)
+  hists['notInSCsingleMultisRegion3'] = r.TH1F('hMulti_notInSCsingleMultisRegion3','hMulti_notInSCsingleMultisRegion3',100,1.,0.)
+
   hists['newR9_Alt404'] = r.TH1F('hMulti_newR9_Alt404','hMulti_newR9_Alt404',100,1.,0.)
+  hists['newR9_Alt404VsGenFrac'] = r.TH2F('hMulti_newR9_Alt404VsGenFrac','hMulti_newR9_Alt404VsGenFrac',20,1.,0.,20,1.,0.)
+  hists['newR9_Alt404VsConvZ'] = r.TH2F('hMulti_newR9_Alt404VsConvZ','hMulti_newR9_Alt404VsConvZ',20,1.,0.,20,1.,0.)
 
   enBins = 50
   enLow  = 0.
@@ -358,15 +372,14 @@ def main():
         continue
       genDvz = genDvzs[iGen]
       genReachedEE = genReachedEEs[iGen]
-      if opts.doConverted==1 and not genReachedEE:
-      #if opts.doConverted==1 and not abs(genDvz)>220.:
+      #if opts.doConverted==1 and not genReachedEE:
+      if opts.doConverted==1 and not abs(genDvz)>220.:
         continue
-      if opts.doConverted==2 and genReachedEE:
-      #if opts.doConverted==2 and abs(genDvz)>220.:
+      #if opts.doConverted==2 and genReachedEE:
+      if opts.doConverted==2 and abs(genDvz)>220.:
         continue
       genEnergy = genEnergies[iGen]
       genPhi = genPhis[iGen]
-      genDz = genDvzs[iGen]
 
       #setup track values - not working atm
       #trackEtas = getattr(theTree,"track_eta")
@@ -570,8 +583,8 @@ def main():
       multiHists['drGenBestAtFace'].Fill( etasPhisZsToDeltaX(genEta,bestMultiEta,genPhi,bestMultiPhi,320.,320.) )
       multiHists['drGenBestAtBestZ'].Fill( etasPhisZsToDeltaX(genEta,bestMultiEta,genPhi,bestMultiPhi,bestMultiZ,bestMultiZ) )
       #dPhi = q*B*dZ/pZ; prefactor is the conversion of GeV to normal units
-      genDeltaPhiFace = 0.2998 * 1. * 3.8 * 0.01*(320.-genDz) * (1./(genPt*cot(2*atan(exp(-1*genEta)))))
-      genDeltaPhiBestZ = 0.2998 * 1. * 3.8 * 0.01*(bestMultiZ-genDz) * (1./(genPt*cot(2*atan(exp(-1*genEta)))))
+      genDeltaPhiFace = 0.2998 * 1. * 3.8 * 0.01*(320.-genDvz) * (1./(genPt*cot(2*atan(exp(-1*genEta)))))
+      genDeltaPhiBestZ = 0.2998 * 1. * 3.8 * 0.01*(bestMultiZ-genDvz) * (1./(genPt*cot(2*atan(exp(-1*genEta)))))
       multiHists['drGenBestAtFaceCorr'].Fill( etasPhisZsToDeltaX(genEta,bestMultiEta,genPhi+genDeltaPhiFace,bestMultiPhi,320.,320.) )
       multiHists['drGenBestAtBestZCorr'].Fill( etasPhisZsToDeltaX(genEta,bestMultiEta,genPhi+genDeltaPhiBestZ,bestMultiPhi,bestMultiZ,bestMultiZ) )
 
@@ -665,6 +678,22 @@ def main():
             multiHists['theSCvars_multisForward'].Fill( dPhi*(1./(multiRho*recipRho)), dEtaDistance)
             multiHists['theSCvarsWeighted_multisForward'].Fill( dPhi*(1./(multiRho*recipRho)), dEtaDistance, tempMultiAltEnergy)
             multiHists['notInSCsingleMultisForward'].Fill(tempMultiAltEnergy/genEnergy)
+          if abs(multiEta) < 1.95: 
+            multiHists['theSCvars_multisRegion0'].Fill( dPhi*(1./(multiRho*recipRho)), dEtaDistance)
+            multiHists['theSCvarsWeighted_multisRegion0'].Fill( dPhi*(1./(multiRho*recipRho)), dEtaDistance, tempMultiAltEnergy)
+            multiHists['notInSCsingleMultisRegion0'].Fill(tempMultiAltEnergy/genEnergy)
+          elif abs(multiEta) < 2.2: 
+            multiHists['theSCvars_multisRegion1'].Fill( dPhi*(1./(multiRho*recipRho)), dEtaDistance)
+            multiHists['theSCvarsWeighted_multisRegion1'].Fill( dPhi*(1./(multiRho*recipRho)), dEtaDistance, tempMultiAltEnergy)
+            multiHists['notInSCsingleMultisRegion1'].Fill(tempMultiAltEnergy/genEnergy)
+          elif abs(multiEta) < 2.45: 
+            multiHists['theSCvars_multisRegion2'].Fill( dPhi*(1./(multiRho*recipRho)), dEtaDistance)
+            multiHists['theSCvarsWeighted_multisRegion2'].Fill( dPhi*(1./(multiRho*recipRho)), dEtaDistance, tempMultiAltEnergy)
+            multiHists['notInSCsingleMultisRegion2'].Fill(tempMultiAltEnergy/genEnergy)
+          elif abs(multiEta) < 2.7: 
+            multiHists['theSCvars_multisRegion3'].Fill( dPhi*(1./(multiRho*recipRho)), dEtaDistance)
+            multiHists['theSCvarsWeighted_multisRegion3'].Fill( dPhi*(1./(multiRho*recipRho)), dEtaDistance, tempMultiAltEnergy)
+            multiHists['notInSCsingleMultisRegion3'].Fill(tempMultiAltEnergy/genEnergy)
           outsideEnFrac_multis += tempMultiAltEnergy
           for outside2DIndex in multi2Ds[iSel]:
             for outsideRecIndex in twodRechits[outside2DIndex]:
@@ -694,6 +723,8 @@ def main():
       multiHists['superEnFrac_Alt403'].Fill( superEnergyAlt403 / genEnergy )
       multiHists['superEnFrac_Alt404'].Fill( superEnergyAlt404 / genEnergy )
       multiHists['newR9_Alt404'].Fill( bestMultiEnergy / superEnergyAlt404 )
+      multiHists['newR9_Alt404VsGenFrac'].Fill( superEnergyAlt404 / genEnergy, bestMultiEnergy / superEnergyAlt404 )
+      multiHists['newR9_Alt404VsConvZ'].Fill( abs(genDvz), bestMultiEnergy / superEnergyAlt404 )
 
       
       #loop over rechits to do cylinder sums
@@ -751,6 +782,7 @@ def main():
     if opts.verbosity>-1: print "moving plots to",opts.webDir
     os.system("rm %s*"%opts.webDir)
     os.system("mv %s* %s"%(opts.outDir,opts.webDir))
+    os.system('mv Output/fits_%s_Pt%s_Conv%s.txt %s'%(opts.particleType,opts.ptVal,opts.doConverted,opts.webDir))
 
   #end main
   print opts.endText
