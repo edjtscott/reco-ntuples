@@ -142,6 +142,13 @@ def initMultiHists():
   hists['newR9_Alt404'] = r.TH1F('hMulti_newR9_Alt404','hMulti_newR9_Alt404',100,1.,0.)
   hists['newR9_Alt404VsGenFrac'] = r.TH2F('hMulti_newR9_Alt404VsGenFrac','hMulti_newR9_Alt404VsGenFrac',20,1.,0.,20,1.,0.)
   hists['newR9_Alt404VsConvZ'] = r.TH2F('hMulti_newR9_Alt404VsConvZ','hMulti_newR9_Alt404VsConvZ',20,1.,0.,20,1.,0.)
+  hists['TotalAlt2VsBestFrac'] = r.TH2F('hMulti_TotalAlt2VsBestFrac','hMulti_TotalAlt2VsBestFrac',20,1.,0.,20,1.,0.)
+  hists['TotalAlt2VsNumMultis'] = r.TH2F('hMulti_TotalAlt2VsNumMultis','hMulti_TotalAlt2VsNumMultis',20,1.,0.,20,1.,0.)
+  hists['TotalAlt2VsLargestScaledDPhi'] = r.TH2F('hMulti_TotalAlt2VsLargestScaledDPhi','hMulti_TotalAlt2VsLargestScaledDPhi',20,1.,0.,20,1.,0.)
+  hists['TotalAlt2VsRmsPhi'] = r.TH2F('hMulti_TotalAlt2VsRmsPhi','hMulti_TotalAlt2VsRmsPhi',20,1.,0.,20,1.,0.)
+  hists['BestFracVsNumMultis'] = r.TH2F('hMulti_BestFracVsNumMultis','hMulti_BestFracVsNumMultis',20,1.,0.,20,1.,0.)
+  hists['BestFracVsLargestScaledDPhi'] = r.TH2F('hMulti_BestFracVsLargestScaledDPhi','hMulti_BestFracVsLargestScaledDPhi',20,1.,0.,20,1.,0.)
+  hists['BestFracVsRmsPhi'] = r.TH2F('hMulti_BestFracVsRmsPhi','hMulti_BestFracVsRmsPhi',20,1.,0.,20,1.,0.)
 
   enBins = 50
   enLow  = 0.
@@ -317,6 +324,13 @@ def etaToTheta(val):
 def thetaToEta(val):
   return -1 * log( tan(val/2.) )
 
+def deltaPhi( phi1, phi2):
+  dPhi = phi1 - phi2;
+  pi = 3.14159265;
+  if     ( dPhi <=-pi): dPhi += 2.0*pi;
+  elif( dPhi >  pi): dPhi -= 2.0*pi;
+  return dPhi;
+
 
 def main():
   r.gROOT.SetBatch(True)
@@ -372,11 +386,11 @@ def main():
         continue
       genDvz = genDvzs[iGen]
       genReachedEE = genReachedEEs[iGen]
-      #if opts.doConverted==1 and not genReachedEE:
-      if opts.doConverted==1 and not abs(genDvz)>220.:
+      if opts.doConverted==1 and not genReachedEE:
+      #if opts.doConverted==1 and not abs(genDvz)>220.:
         continue
-      #if opts.doConverted==2 and genReachedEE:
-      if opts.doConverted==2 and abs(genDvz)>220.:
+      if opts.doConverted==2 and genReachedEE:
+      #if opts.doConverted==2 and abs(genDvz)>220.:
         continue
       genEnergy = genEnergies[iGen]
       genPhi = genPhis[iGen]
@@ -619,6 +633,10 @@ def main():
         scanEnergies.append(bestMultiEnergy)
       outsideEnFrac_rechits = 0.
       outsideEnFrac_multis = 0.
+      largestDphi = -9999.
+      phiSumW = 0.
+      phiSqSumW = 0.
+      sumW = 0.
      
       #loop over selected multis again for superclustering
       #idea is to add together the multis within an eta-phi road
@@ -636,7 +654,11 @@ def main():
         #multiRho = deltaX( etaPhiZtoX(multiEta,multiPhi,multiZ), 0., etaPhiZtoY(multiEta,multiPhi,multiZ), 0. )
         multiRho = deltaX( etaPhiZtoX(multiEta,multiPhi,320.), 0., etaPhiZtoY(multiEta,multiPhi,320.), 0. ) #see recipRho comment above
         dEta = (multiEta - bestMultiEta)
-        dPhi = (multiPhi - bestMultiPhi)
+        dPhi = deltaPhi(multiPhi,bestMultiPhi)
+        if abs(dPhi)>largestDphi: largestDphi = abs(dPhi)
+        phiSumW += multiPhi*multiEnergy
+        phiSqSumW += multiPhi*multiPhi*multiEnergy
+        sumW += multiEnergy
         #want the dEta criterion to correspond to ~2cm (as first guess, now configurable)
         etaThreshold = 0.05
         if opts.etaWindow > 1.:
@@ -725,6 +747,16 @@ def main():
       multiHists['newR9_Alt404'].Fill( bestMultiEnergy / superEnergyAlt404 )
       multiHists['newR9_Alt404VsGenFrac'].Fill( superEnergyAlt404 / genEnergy, bestMultiEnergy / superEnergyAlt404 )
       multiHists['newR9_Alt404VsConvZ'].Fill( abs(genDvz), bestMultiEnergy / superEnergyAlt404 )
+      meanSqPhi = phiSqSumW / sumW
+      meanPhi = phiSumW / sumW
+      rmsPhi = sqrt( meanSqPhi - meanPhi*meanPhi )
+      multiHists['TotalAlt2VsBestFrac'].Fill( bestMultiEnergy / genEnergy , totalMultiEnergyAlt2 / genEnergy)
+      multiHists['TotalAlt2VsNumMultis'].Fill( len(selectedMultiIndices) , totalMultiEnergyAlt2 / genEnergy)
+      multiHists['TotalAlt2VsLargestScaledDPhi'].Fill( largestDphi*(1./(bestMultiRho*recipRho)), totalMultiEnergyAlt2 / genEnergy)
+      multiHists['TotalAlt2VsRmsPhi'].Fill( rmsPhi , totalMultiEnergyAlt2 / genEnergy)
+      multiHists['BestFracVsNumMultis'].Fill( len(selectedMultiIndices) , bestMultiEnergy / genEnergy)
+      multiHists['BestFracVsLargestScaledDPhi'].Fill( largestDphi*(1./(bestMultiRho*recipRho)), bestMultiEnergy / genEnergy)
+      multiHists['BestFracVsRmsPhi'].Fill( rmsPhi , bestMultiEnergy / genEnergy)
 
       
       #loop over rechits to do cylinder sums
