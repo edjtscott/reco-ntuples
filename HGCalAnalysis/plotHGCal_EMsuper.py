@@ -87,6 +87,19 @@ def initMultiHists():
   hists['suggestedEnFrac'] = r.TH1F('hMulti_suggestedEnFrac','hMulti_suggestedEnFrac',100,1.,0.)
   hists['layersInBest'] = r.TH1F('hMulti_layersInBest','hMulti_layersInBest',53,-0.5,52.5)
   hists['layersInBestWeighted'] = r.TH1F('hMulti_layersInBestWeighted','hMulti_layersInBestWeighted',53,-0.5,52.5)
+  hists['num2DsInBest'] = r.TH1F('hMulti_num2DsInBest','hMulti_num2DsInBest',53,-0.5,52.5)
+  hists['num2DsInBestWeighted'] = r.TH1F('hMulti_num2DsInBestWeighted','hMulti_num2DsInBestWeighted',53,-0.5,52.5)
+  hists['hOverEInBest'] = r.TH1F('hMulti_hOverEInBest','hMulti_hOverEInBest',100,0.,0.1)
+  hists['hOverEInBestWeighted'] = r.TH1F('hMulti_hOverEInBestWeighted','hMulti_hOverEInBestWeighted',100,0.,0.1)
+  hists['maxClusterInBestX'] = r.TH1F('hMulti_maxClusterInBestX','hMulti_hMulti_maxClusterInBestX',100,1.,0.)
+  hists['maxClusterInBestY'] = r.TH1F('hMulti_maxClusterInBestY','hMulti_hMulti_maxClusterInBestY',100,1.,0.)
+  hists['maxClusterInBestZ'] = r.TH1F('hMulti_maxClusterInBestZ','hMulti_hMulti_maxClusterInBestZ',100,1.,0.)
+  hists['maxClusterInBestLayer'] = r.TH1F('hMulti_maxClusterInBestLayer','hMulti_hMulti_maxClusterInBestZ',53,-0.5,52.5)
+  hists['maxClusterInBestGenDrho'] = r.TH1F('hMulti_maxClusterInBestGenDrho','hMulti_hMulti_maxClusterInBestGenDrho',100,0.,5.)
+  hists['maxClusterInBestGenDeta'] = r.TH1F('hMulti_maxClusterInBestGenDeta','hMulti_hMulti_maxClusterInBestGenDeta',100,-0.01,0.01)
+  hists['maxClusterInBestGenDphi'] = r.TH1F('hMulti_maxClusterInBestGenDphi','hMulti_hMulti_maxClusterInBestGenDphi',100,-0.1,0.1)
+  hists['maxClusterInBestGenDetaCm'] = r.TH1F('hMulti_maxClusterInBestGenDetaCm','hMulti_hMulti_maxClusterInBestGenDetaCm',100,-0.5,0.5)
+  hists['maxClusterInBestGenDphiScaled'] = r.TH1F('hMulti_maxClusterInBestGenDphiScaled','hMulti_hMulti_maxClusterInBestGenDphiScaled',100,-0.1,0.1)
   hists['drGenBestAtFace'] = r.TH1F('hMulti_drGenBestAtFace','hMulti_drGenBestAtFace',100,0.,5.)
   hists['drGenBestAtBestZ'] = r.TH1F('hMulti_drGenBestAtBestZ','hMulti_drGenBestAtBestZ',100,0.,5.)
   hists['drGenBestAtFaceCorr'] = r.TH1F('hMulti_drGenBestAtFaceCorr','hMulti_drGenBestAtFaceCorr',100,0.,5.)
@@ -112,6 +125,10 @@ def initMultiHists():
   hists['superEnFrac_Alt404'] = r.TH1F('hMulti_superEnFrac_Alt404','hMulti_superEnFrac_Alt404',100,1.,0.)
   hists['fourNotTwoHitsLayer'] = r.TH1F('hMulti_fourNotTwoHitsLayer','hMulti_fourNotTwoHitsLayer',53,-0.5,52.5)
   hists['fourNotTwoHitsLayerWeighted'] = r.TH1F('hMulti_fourNotTwoHitsLayerWeighted','hMulti_fourNotTwoHitsLayerWeighted',53,-0.5,52.5)
+  hists['num2DsInSelected'] = r.TH1F('hMulti_num2DsInSelected','hMulti_num2DsInSelected',53,-0.5,52.5)
+  hists['num2DsInSelectedWeighted'] = r.TH1F('hMulti_num2DsInSelectedWeighted','hMulti_num2DsInSelectedWeighted',53,-0.5,52.5)
+  hists['hOverEInSelected'] = r.TH1F('hMulti_hOverEInSelected','hMulti_hOverEInSelected',100,0.,0.1)
+  hists['hOverEInSelectedWeighted'] = r.TH1F('hMulti_hOverEInSelectedWeighted','hMulti_hOverEInSelectedWeighted',100,0.,0.1)
 
   hists['theSCvars_rechits'] = r.TH2F('hMulti_theSCvars_rechits','hMulti_theSCvars_rechits',20,-1.,1.,20,-5.,5.)
   hists['theSCvarsWeighted_rechits'] = r.TH2F('hMulti_theSCvarsWeighted_rechits','hMulti_theSCvarsWeighted_rechits',20,-1.,1.,20,-5.,5.)
@@ -594,6 +611,9 @@ def main():
       multiHists['totalEnFrac_Alt3'].Fill(totalMultiEnergyAlt3/genEnergy)
       multiHists['totalEnFrac_Alt4'].Fill(totalMultiEnergyAlt4/genEnergy)
 
+      multiHists['num2DsInBest'].Fill(len(bestMulti2Ds))
+      multiHists['num2DsInBestWeighted'].Fill(len(bestMulti2Ds),bestMultiEnergy)
+
       multiHists['drGenBestAtFace'].Fill( etasPhisZsToDeltaX(genEta,bestMultiEta,genPhi,bestMultiPhi,320.,320.) )
       multiHists['drGenBestAtBestZ'].Fill( etasPhisZsToDeltaX(genEta,bestMultiEta,genPhi,bestMultiPhi,bestMultiZ,bestMultiZ) )
       #dPhi = q*B*dZ/pZ; prefactor is the conversion of GeV to normal units
@@ -605,12 +625,62 @@ def main():
       #quick loop over 2Ds in best multi to get layer info
       twodEnergies = getattr(theTree,"cluster2d_energy")
       twodLayers = getattr(theTree,"cluster2d_layer")
+      twodXs = getattr(theTree,"cluster2d_x")
+      twodYs = getattr(theTree,"cluster2d_y")
+      twodZs = getattr(theTree,"cluster2d_z")
+      twodEtas = getattr(theTree,"cluster2d_eta")
+      twodPhis = getattr(theTree,"cluster2d_phi")
+      maxClusterInBestIndex = -9999
+      maxClusterInBestEnergy = -9999.
+      bestEmEnergy = 0.
+      bestHadEnergy = 0.
       for iBest2D in range(len(bestMulti2Ds)):
         twodIndex = bestMulti2Ds[iBest2D]
         twodLayer = twodLayers[twodIndex]
         twodEnergy = twodEnergies[twodIndex]
         multiHists['layersInBest'].Fill(twodLayer)
         multiHists['layersInBestWeighted'].Fill(twodLayer,twodEnergy)
+        if twodEnergy>maxClusterInBestEnergy:
+          maxClusterInBestEnergy = twodEnergy
+          maxClusterInBestIndex = twodIndex
+        if twodLayer<=28:
+          bestEmEnergy += twodEnergy
+        elif twodLayer>28:
+          bestHadEnergy += twodEnergy
+      maxClusterInBestX = twodXs[maxClusterInBestIndex]
+      maxClusterInBestY = twodYs[maxClusterInBestIndex]
+      maxClusterInBestZ = twodZs[maxClusterInBestIndex]
+      maxClusterInBestLayer = twodLayers[maxClusterInBestIndex]
+      maxClusterInBestEta = twodEtas[maxClusterInBestIndex]
+      maxClusterInBestPhi = twodPhis[maxClusterInBestIndex]
+      maxClusterInBestGenDrho = etasPhisZsToDeltaX(genEta, maxClusterInBestEta, genPhi, maxClusterInBestPhi, maxClusterInBestZ, maxClusterInBestZ)
+      maxClusterInBestGenDeta = maxClusterInBestEta - genEta
+      maxClusterInBestGenDphi = deltaPhi(maxClusterInBestPhi, genPhi)
+      multiHists['maxClusterInBestX'].Fill( maxClusterInBestX )
+      multiHists['maxClusterInBestY'].Fill( maxClusterInBestY )
+      multiHists['maxClusterInBestZ'].Fill( maxClusterInBestZ )
+      multiHists['maxClusterInBestLayer'].Fill( maxClusterInBestLayer )
+      multiHists['maxClusterInBestGenDrho'].Fill( maxClusterInBestGenDrho )
+      multiHists['maxClusterInBestGenDeta'].Fill( maxClusterInBestGenDeta )
+      multiHists['maxClusterInBestGenDphi'].Fill( maxClusterInBestGenDphi )
+      
+      recipRho = 1. / deltaX( etaPhiZtoX(1.5,0.,320.), 0., etaPhiZtoY(1.5,0.,320.), 0. )
+      maxClusterInBestRho = deltaX( etaPhiZtoX(maxClusterInBestEta,maxClusterInBestPhi,maxClusterInBestZ), 0., etaPhiZtoY(maxClusterInBestEta,maxClusterInBestPhi,maxClusterInBestZ), 0. )
+      maxClusterInBestR = sqrt( maxClusterInBestZ*maxClusterInBestZ + maxClusterInBestRho*maxClusterInBestRho )
+      maxClusterInBestGenDetaCm = (etaToTheta(maxClusterInBestEta) - etaToTheta(genEta)) * maxClusterInBestR
+      maxClusterInBestGenDphiScaled = maxClusterInBestGenDphi*(1./(maxClusterInBestRho*recipRho))
+      multiHists['maxClusterInBestGenDetaCm'].Fill( maxClusterInBestGenDetaCm )
+      multiHists['maxClusterInBestGenDphiScaled'].Fill( maxClusterInBestGenDphiScaled )
+      if bestEmEnergy>0.:
+        if bestHadEnergy/bestEmEnergy <0.1:
+          multiHists['hOverEInBest'].Fill(bestHadEnergy/bestEmEnergy)
+          multiHists['hOverEInBestWeighted'].Fill(bestHadEnergy/bestEmEnergy, bestMultiEnergy)
+        else:
+          multiHists['hOverEInBest'].Fill(0.099)
+          multiHists['hOverEInBestWeighted'].Fill(0.099, bestMultiEnergy)
+      else:
+        multiHists['hOverEInBest'].Fill(0.099)
+        multiHists['hOverEInBestWeighted'].Fill(0.099, bestMultiEnergy)
 
       #setup superclustering
       numSuperPoints = opts.superClus
@@ -618,7 +688,7 @@ def main():
       scanPhis = []
       scanEnergies = []
       #recipRho = 1. / deltaX( etaPhiZtoX(1.5,0.,bestMultiZ), 0., etaPhiZtoY(1.5,0.,bestMultiZ), 0. )  #want radius at eta=1.5 for best multicluster z
-      recipRho = 1. / deltaX( etaPhiZtoX(1.5,0.,320.), 0., etaPhiZtoY(1.5,0.,320.), 0. )  #Chris says original method was over the top, now just at front face...
+      #recipRho = 1. / deltaX( etaPhiZtoX(1.5,0.,320.), 0., etaPhiZtoY(1.5,0.,320.), 0. )  #Chris says original method was over the top, now just at front face... #this now
       #print "recipRho",recipRho
       superHaloEnergy03 = bestMultiEnergy
       superHaloEnergy04 = bestMultiEnergy
@@ -673,14 +743,34 @@ def main():
               scanEnergies[iPhi] += multiEnergy
           if abs(dPhi) < 0.4 * multiRho * recipRho:
             theMultisTwoDs = multi2Ds[iSel]
+            multiHists['num2DsInSelected'].Fill(len(theMultisTwoDs))
+            multiHists['num2DsInSelectedWeighted'].Fill(len(theMultisTwoDs),multiEnergy)
             superEnergyAlt204 += multiAlt2Energies[iSel]
             superEnergyAlt304 += multiAlt3Energies[iSel]
             superEnergyAlt404 += multiAlt4Energies[iSel]
+            selectedEmEnergy = 0.
+            selectedHadEnergy = 0.
             for iTwoD in theMultisTwoDs:
-              for iRec in twodRechits[iTwoD]:
-                superHaloEnergy04 += rechitEnergies[iRec]
-                if abs(dPhi) < 0.3 * multiRho * recipRho:
-                  superHaloEnergy03 += rechitEnergies[iRec]
+              sel2Dlayer = twodLayers[iTwoD]
+              sel2Denergy = twodEnergies[iTwoD]
+              if sel2Dlayer<=28:
+                selectedEmEnergy += sel2Denergy
+              if sel2Dlayer>28:
+                selectedHadEnergy += sel2Denergy
+            if selectedEmEnergy>0.:
+              if selectedHadEnergy / selectedEmEnergy<0.1:
+                multiHists['hOverEInSelected'].Fill(selectedHadEnergy / selectedEmEnergy)
+                multiHists['hOverEInSelectedWeighted'].Fill(selectedHadEnergy / selectedEmEnergy, multiEnergy)
+              else:
+                multiHists['hOverEInSelected'].Fill(0.099)
+                multiHists['hOverEInSelectedWeighted'].Fill(0.099, multiEnergy)
+            else:
+              multiHists['hOverEInSelected'].Fill(0.099)
+              multiHists['hOverEInSelectedWeighted'].Fill(0.099, multiEnergy)
+              #for iRec in twodRechits[iTwoD]:
+              #  superHaloEnergy04 += rechitEnergies[iRec]
+              #  if abs(dPhi) < 0.3 * multiRho * recipRho:
+              #    superHaloEnergy03 += rechitEnergies[iRec]
           if abs(dPhi) < 0.3 * multiRho * recipRho:
             superEnergyAlt203 += multiAlt2Energies[iSel]
             superEnergyAlt303 += multiAlt3Energies[iSel]
@@ -747,16 +837,19 @@ def main():
       multiHists['newR9_Alt404'].Fill( bestMultiEnergy / superEnergyAlt404 )
       multiHists['newR9_Alt404VsGenFrac'].Fill( superEnergyAlt404 / genEnergy, bestMultiEnergy / superEnergyAlt404 )
       multiHists['newR9_Alt404VsConvZ'].Fill( abs(genDvz), bestMultiEnergy / superEnergyAlt404 )
-      meanSqPhi = phiSqSumW / sumW
-      meanPhi = phiSumW / sumW
-      rmsPhi = sqrt( meanSqPhi - meanPhi*meanPhi )
+      if sumW>0.:
+        meanSqPhi = phiSqSumW / sumW
+        meanPhi = phiSumW / sumW
+        if meanSqPhi > meanPhi*meanPhi:
+          rmsPhi = sqrt( meanSqPhi - meanPhi*meanPhi )
+          multiHists['TotalAlt2VsRmsPhi'].Fill( rmsPhi , totalMultiEnergyAlt2 / genEnergy)
+          multiHists['BestFracVsRmsPhi'].Fill( rmsPhi , bestMultiEnergy / genEnergy)
+        else: print "meanSqPhi %1.3f, meanPhixmeanPhi %1.3f, sumW %1.3f"%(meanSqPhi,meanPhi*meanPhi,sumW)
       multiHists['TotalAlt2VsBestFrac'].Fill( bestMultiEnergy / genEnergy , totalMultiEnergyAlt2 / genEnergy)
       multiHists['TotalAlt2VsNumMultis'].Fill( len(selectedMultiIndices) , totalMultiEnergyAlt2 / genEnergy)
-      multiHists['TotalAlt2VsLargestScaledDPhi'].Fill( largestDphi*(1./(bestMultiRho*recipRho)), totalMultiEnergyAlt2 / genEnergy)
-      multiHists['TotalAlt2VsRmsPhi'].Fill( rmsPhi , totalMultiEnergyAlt2 / genEnergy)
       multiHists['BestFracVsNumMultis'].Fill( len(selectedMultiIndices) , bestMultiEnergy / genEnergy)
       multiHists['BestFracVsLargestScaledDPhi'].Fill( largestDphi*(1./(bestMultiRho*recipRho)), bestMultiEnergy / genEnergy)
-      multiHists['BestFracVsRmsPhi'].Fill( rmsPhi , bestMultiEnergy / genEnergy)
+      multiHists['TotalAlt2VsLargestScaledDPhi'].Fill( largestDphi*(1./(bestMultiRho*recipRho)), totalMultiEnergyAlt2 / genEnergy)
 
       
       #loop over rechits to do cylinder sums
