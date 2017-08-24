@@ -130,6 +130,19 @@ def initMultiHists():
   hists['hOverEInSelected'] = r.TH1F('hMulti_hOverEInSelected','hMulti_hOverEInSelected',100,0.,0.1)
   hists['hOverEInSelectedWeighted'] = r.TH1F('hMulti_hOverEInSelectedWeighted','hMulti_hOverEInSelectedWeighted',100,0.,0.1)
 
+  hists['superEnFrac_Cuts32EnergyAlt204'] = r.TH1F('hMulti_superEnFrac_Cuts32EnergyAlt204','hMulti_superEnFrac_Cuts32EnergyAlt204',100,1.,0.)
+  hists['superEnFrac_Cuts32EnergyAlt304'] = r.TH1F('hMulti_superEnFrac_Cuts32EnergyAlt304','hMulti_superEnFrac_Cuts32EnergyAlt304',100,1.,0.)
+  hists['superEnFrac_Cuts32EnergyAlt404'] = r.TH1F('hMulti_superEnFrac_Cuts32EnergyAlt404','hMulti_superEnFrac_Cuts32EnergyAlt404',100,1.,0.)
+  hists['superEnFrac_Cuts35EnergyAlt204'] = r.TH1F('hMulti_superEnFrac_Cuts35EnergyAlt204','hMulti_superEnFrac_Cuts35EnergyAlt204',100,1.,0.)
+  hists['superEnFrac_Cuts35EnergyAlt304'] = r.TH1F('hMulti_superEnFrac_Cuts35EnergyAlt304','hMulti_superEnFrac_Cuts35EnergyAlt304',100,1.,0.)
+  hists['superEnFrac_Cuts35EnergyAlt404'] = r.TH1F('hMulti_superEnFrac_Cuts35EnergyAlt404','hMulti_superEnFrac_Cuts35EnergyAlt404',100,1.,0.)
+  hists['superEnFrac_Cuts82EnergyAlt204'] = r.TH1F('hMulti_superEnFrac_Cuts82EnergyAlt204','hMulti_superEnFrac_Cuts82EnergyAlt204',100,1.,0.)
+  hists['superEnFrac_Cuts82EnergyAlt304'] = r.TH1F('hMulti_superEnFrac_Cuts82EnergyAlt304','hMulti_superEnFrac_Cuts82EnergyAlt304',100,1.,0.)
+  hists['superEnFrac_Cuts82EnergyAlt404'] = r.TH1F('hMulti_superEnFrac_Cuts82EnergyAlt404','hMulti_superEnFrac_Cuts82EnergyAlt404',100,1.,0.)
+  hists['superEnFrac_Cuts85EnergyAlt204'] = r.TH1F('hMulti_superEnFrac_Cuts85EnergyAlt204','hMulti_superEnFrac_Cuts85EnergyAlt204',100,1.,0.)
+  hists['superEnFrac_Cuts85EnergyAlt304'] = r.TH1F('hMulti_superEnFrac_Cuts85EnergyAlt304','hMulti_superEnFrac_Cuts85EnergyAlt304',100,1.,0.)
+  hists['superEnFrac_Cuts85EnergyAlt404'] = r.TH1F('hMulti_superEnFrac_Cuts85EnergyAlt404','hMulti_superEnFrac_Cuts85EnergyAlt404',100,1.,0.)
+
   hists['theSCvars_rechits'] = r.TH2F('hMulti_theSCvars_rechits','hMulti_theSCvars_rechits',20,-1.,1.,20,-5.,5.)
   hists['theSCvarsWeighted_rechits'] = r.TH2F('hMulti_theSCvarsWeighted_rechits','hMulti_theSCvarsWeighted_rechits',20,-1.,1.,20,-5.,5.)
   hists['notInSCEnFrac_rechits'] = r.TH1F('hMulti_notInSCEnFrac_rechits','hMulti_notInSCEnFrac_rechits',100,1.,0.)
@@ -698,6 +711,18 @@ def main():
       superEnergyAlt304 = bestMultiAlt3Energy
       superEnergyAlt403 = bestMultiAlt4Energy
       superEnergyAlt404 = bestMultiAlt4Energy
+      superCuts32EnergyAlt204 = bestMultiAlt4Energy
+      superCuts32EnergyAlt304 = bestMultiAlt4Energy
+      superCuts32EnergyAlt404 = bestMultiAlt4Energy
+      superCuts35EnergyAlt204 = bestMultiAlt4Energy
+      superCuts35EnergyAlt304 = bestMultiAlt4Energy
+      superCuts35EnergyAlt404 = bestMultiAlt4Energy
+      superCuts82EnergyAlt204 = bestMultiAlt4Energy
+      superCuts82EnergyAlt304 = bestMultiAlt4Energy
+      superCuts82EnergyAlt404 = bestMultiAlt4Energy
+      superCuts85EnergyAlt204 = bestMultiAlt4Energy
+      superCuts85EnergyAlt304 = bestMultiAlt4Energy
+      superCuts85EnergyAlt404 = bestMultiAlt4Energy
       for iPhi in range(1,numSuperPoints+1):
         scanPhis.append( phiStep * iPhi)
         scanEnergies.append(bestMultiEnergy)
@@ -764,6 +789,24 @@ def main():
               else:
                 multiHists['hOverEInSelected'].Fill(0.099)
                 multiHists['hOverEInSelectedWeighted'].Fill(0.099, multiEnergy)
+              #try two different H/E cuts, along with two different N2D cuts
+              if selectedHadEnergy / selectedEmEnergy<0.02:
+                superCuts32EnergyAlt204 += multiAlt2Energies[iSel]
+                superCuts32EnergyAlt304 += multiAlt3Energies[iSel]
+                superCuts32EnergyAlt404 += multiAlt4Energies[iSel]
+              if selectedHadEnergy / selectedEmEnergy<0.05:
+                superCuts35EnergyAlt204 += multiAlt2Energies[iSel]
+                superCuts35EnergyAlt304 += multiAlt3Energies[iSel]
+                superCuts35EnergyAlt404 += multiAlt4Energies[iSel]
+              if len(theMultisTwoDs) >= 8:
+                if selectedHadEnergy / selectedEmEnergy<0.02:
+                  superCuts82EnergyAlt204 += multiAlt2Energies[iSel]
+                  superCuts82EnergyAlt304 += multiAlt3Energies[iSel]
+                  superCuts82EnergyAlt404 += multiAlt4Energies[iSel]
+                if selectedHadEnergy / selectedEmEnergy<0.05:
+                  superCuts85EnergyAlt204 += multiAlt2Energies[iSel]
+                  superCuts85EnergyAlt304 += multiAlt3Energies[iSel]
+                  superCuts85EnergyAlt404 += multiAlt4Energies[iSel]
             else:
               multiHists['hOverEInSelected'].Fill(0.099)
               multiHists['hOverEInSelectedWeighted'].Fill(0.099, multiEnergy)
@@ -807,18 +850,18 @@ def main():
             multiHists['theSCvarsWeighted_multisRegion3'].Fill( dPhi*(1./(multiRho*recipRho)), dEtaDistance, tempMultiAltEnergy)
             multiHists['notInSCsingleMultisRegion3'].Fill(tempMultiAltEnergy/genEnergy)
           outsideEnFrac_multis += tempMultiAltEnergy
-          for outside2DIndex in multi2Ds[iSel]:
-            for outsideRecIndex in twodRechits[outside2DIndex]:
-              tempRecEta = rechitEtas[outsideRecIndex]
-              tempRecPhi = rechitPhis[outsideRecIndex]
-              tempRecEnergy = rechitEnergies[outsideRecIndex]
-              tempRecRho = deltaX( etaPhiZtoX(tempRecEta,tempRecPhi,320.), 0., etaPhiZtoY(tempRecEta,tempRecPhi,320.), 0. ) #see recipRho comment above
-              #tempDeta = abs(tempRecEta - bestMultiEta)
-              tempDphi = (tempRecPhi - bestMultiPhi)
-              tempDetaDistance = (etaToTheta(tempRecEta) - etaToTheta(bestMultiEta)) * bestMultiR
-              multiHists['theSCvars_rechits'].Fill( tempDphi*(1./(tempRecRho*recipRho)), tempDetaDistance)
-              multiHists['theSCvarsWeighted_rechits'].Fill( tempDphi*(1./(tempRecRho*recipRho)), tempDetaDistance, tempRecEnergy)
-              outsideEnFrac_rechits += tempRecEnergy
+          #for outside2DIndex in multi2Ds[iSel]:
+          #  for outsideRecIndex in twodRechits[outside2DIndex]:
+          #    tempRecEta = rechitEtas[outsideRecIndex]
+          #    tempRecPhi = rechitPhis[outsideRecIndex]
+          #    tempRecEnergy = rechitEnergies[outsideRecIndex]
+          #    tempRecRho = deltaX( etaPhiZtoX(tempRecEta,tempRecPhi,320.), 0., etaPhiZtoY(tempRecEta,tempRecPhi,320.), 0. ) #see recipRho comment above
+          #    #tempDeta = abs(tempRecEta - bestMultiEta)
+          #    tempDphi = (tempRecPhi - bestMultiPhi)
+          #    tempDetaDistance = (etaToTheta(tempRecEta) - etaToTheta(bestMultiEta)) * bestMultiR
+          #    multiHists['theSCvars_rechits'].Fill( tempDphi*(1./(tempRecRho*recipRho)), tempDetaDistance)
+          #    multiHists['theSCvarsWeighted_rechits'].Fill( tempDphi*(1./(tempRecRho*recipRho)), tempDetaDistance, tempRecEnergy)
+          #    outsideEnFrac_rechits += tempRecEnergy
       multiHists['notInSCEnFrac_multis'].Fill(outsideEnFrac_multis/genEnergy)
       multiHists['notInSCEnFrac_rechits'].Fill(outsideEnFrac_rechits/genEnergy)
 
@@ -850,6 +893,19 @@ def main():
       multiHists['BestFracVsNumMultis'].Fill( len(selectedMultiIndices) , bestMultiEnergy / genEnergy)
       multiHists['BestFracVsLargestScaledDPhi'].Fill( largestDphi*(1./(bestMultiRho*recipRho)), bestMultiEnergy / genEnergy)
       multiHists['TotalAlt2VsLargestScaledDPhi'].Fill( largestDphi*(1./(bestMultiRho*recipRho)), totalMultiEnergyAlt2 / genEnergy)
+      #with cuts on N2D, H/E
+      multiHists['superEnFrac_Cuts32EnergyAlt204'].Fill( superCuts32EnergyAlt204/genEnergy )
+      multiHists['superEnFrac_Cuts32EnergyAlt304'].Fill( superCuts32EnergyAlt304/genEnergy )
+      multiHists['superEnFrac_Cuts32EnergyAlt404'].Fill( superCuts32EnergyAlt404/genEnergy )
+      multiHists['superEnFrac_Cuts35EnergyAlt204'].Fill( superCuts35EnergyAlt204/genEnergy )
+      multiHists['superEnFrac_Cuts35EnergyAlt304'].Fill( superCuts35EnergyAlt304/genEnergy )
+      multiHists['superEnFrac_Cuts35EnergyAlt404'].Fill( superCuts35EnergyAlt404/genEnergy )
+      multiHists['superEnFrac_Cuts82EnergyAlt204'].Fill( superCuts82EnergyAlt204/genEnergy )
+      multiHists['superEnFrac_Cuts82EnergyAlt304'].Fill( superCuts82EnergyAlt304/genEnergy )
+      multiHists['superEnFrac_Cuts82EnergyAlt404'].Fill( superCuts82EnergyAlt404/genEnergy )
+      multiHists['superEnFrac_Cuts85EnergyAlt204'].Fill( superCuts85EnergyAlt204/genEnergy )
+      multiHists['superEnFrac_Cuts85EnergyAlt304'].Fill( superCuts85EnergyAlt304/genEnergy )
+      multiHists['superEnFrac_Cuts85EnergyAlt404'].Fill( superCuts85EnergyAlt404/genEnergy )
 
       
       #loop over rechits to do cylinder sums

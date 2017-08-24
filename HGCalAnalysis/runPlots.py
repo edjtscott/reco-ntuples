@@ -2,7 +2,8 @@ import os
 #passName = "Pass23a"
 #passName = "Pass23a_conv220"
 #passName = "Pass23b"
-passName = "Pass24"
+#passName = "Pass24"
+passName = "Pass24a"
 #particles = ["Photon","Pion"]
 #particles = ["Pion"]
 particles = ["Photon"]
@@ -17,11 +18,12 @@ ptvals = ["25"]
 
 #names = {"Photon":"D17","Pion":"D17_255_225","Electron":"D17"}
 #names = {"Photon":["LogWeightingOff","LogWeightingOn","DropNoMultis"],"Pion":["D17_255_225"],"Electron":["D17"]}
-names = {"Photon":["NewRadii"],"Pion":["D17_255_225"],"Electron":["D17"]}
+#names = {"Photon":["NewRadii"],"Pion":["D17_255_225"],"Electron":["D17"]}
 #names = {"Photon":["LogWeightingOn","LogWeightingOff","DropNoMultis"],"Pion":["D17_255_225"],"Electron":["D17"]}
+names = {"Photon":["LogWeightingOff_1dot5"],"Pion":["D17_255_225"],"Electron":["D17"]}
 #prenames = ["","PU200_"]
-#prenames = ["PU200_"]
-prenames = [""]
+prenames = ["PU200_"]
+#prenames = [""]
 
 for particle in particles:
   for ptval in ptvals:
@@ -33,8 +35,9 @@ for particle in particles:
 
         if 'Photon' in particle:
           web = "/afs/cern.ch/user/e/escott/www/HGCclustering/%s/%s/%s_Pt%s/"%(passName,name+'_2cm',particle,ptval)
-          os.system("python plotHGCal_EMsuper.py -f %s -w %s -p %s -m %s -c 1 --etaWindow 2."%(infile,web,particle,ptval))
           os.system("python plotHGCal_EMsuper.py -f %s -w %s -p %s -m %s -c 2 --etaWindow 2."%(infile,web,particle,ptval))
+          os.system("python plotHGCal_EMsuper.py -f %s -w %s -p %s -m %s -c 1 --etaWindow 2."%(infile,web,particle,ptval))
+          #os.system("python plotHGCal_EMsuper.py -f %s -w %s -p %s -m %s -c 2 --etaWindow 2."%(infile,web,particle,ptval))
           web = "/afs/cern.ch/user/e/escott/www/HGCclustering/%s/%s/%s_Pt%s/"%(passName,name+'_3cm',particle,ptval)
           #os.system("python plotHGCal_EMsuper.py -f %s -w %s -p %s -m %s -c 1 --etaWindow 3."%(infile,web,particle,ptval))
           #os.system("python plotHGCal_EMsuper.py -f %s -w %s -p %s -m %s -c 2 --etaWindow 3."%(infile,web,particle,ptval))
