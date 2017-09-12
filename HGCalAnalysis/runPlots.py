@@ -1,12 +1,8 @@
 import os
-#passName = "Pass23a"
-#passName = "Pass23a_conv220"
-#passName = "Pass23b"
-#passName = "Pass24"
-passName = "Pass24a"
+passName = "Pass25"
 #particles = ["Photon","Pion"]
-#particles = ["Pion"]
-particles = ["Photon"]
+particles = ["Pion"]
+#particles = ["Photon"]
 #particles = ["Electron"]
 #particles = ["Photon","Electron"]
 #ptvals = ["35","25","15"]
@@ -20,10 +16,10 @@ ptvals = ["25"]
 #names = {"Photon":["LogWeightingOff","LogWeightingOn","DropNoMultis"],"Pion":["D17_255_225"],"Electron":["D17"]}
 #names = {"Photon":["NewRadii"],"Pion":["D17_255_225"],"Electron":["D17"]}
 #names = {"Photon":["LogWeightingOn","LogWeightingOff","DropNoMultis"],"Pion":["D17_255_225"],"Electron":["D17"]}
-names = {"Photon":["LogWeightingOff_1dot5"],"Pion":["D17_255_225"],"Electron":["D17"]}
+names = {"Photon":["93X"],"Pion":["93X"],"Electron":["93X"]}
 #prenames = ["","PU200_"]
-prenames = ["PU200_"]
-#prenames = [""]
+#prenames = ["PU200_"]
+prenames = [""]
 
 for particle in particles:
   for ptval in ptvals:
