@@ -15,6 +15,8 @@ parser.add_option("-m","--ptVal",default="35")
 parser.add_option("-e","--ext",default="UpdatedNtuple_20mm")
 parser.add_option("--enRadii",default="2,4,6,8")
 parser.add_option("--scRadii",default="4,6,8,10")
+parser.add_option("--megaRadiiFront",default="1,2,3,4,5")
+parser.add_option("--megaRadiiBack",default="6,8,10,12,14")
 parser.add_option("--etaWindow",type="float",default=0.05,help="if less than one, just the eta window. If greater than one, the number of cm the window should correspond to")
 parser.add_option("-n","--nClus",type="int",default=3,help="min number of 2D clusters for a multicluster to be included in sums. Default is three")
 parser.add_option("-s","--superClus",type="int",default=30,help="set number of points to scan for superclustering. Default is thirty")
@@ -77,6 +79,29 @@ def makeOutDir(thedir,index=True):
 def initGenHists():
   pass
 
+def init2DHists(enRadii,megaRadiiFront,megaRadiiBack):
+  hists = {}
+  for lay in range(53):
+    hists['dr2DtoGenAxis_layer%02d'%(lay)] = r.TH1F('h2D_dr2DtoGenAxis_layer%02d'%(lay),'h2D_dr2DtoGenAxis_layer%02d'%(lay),50,0.,50.)
+    hists['dr2DtoGenAxis_layer%02d'%(lay)].SetMaximum(16000)
+    hists['dr2DtoGenAxis_layer%02d_Alt4weighted'%(lay)] = r.TH1F('h2D_dr2DtoGenAxis_layer%02d_Alt4weighted'%(lay),'h2D_dr2DtoGenAxis_layer%02d_Alt4weighted'%(lay),50,0.,50.)
+    hists['dr2DtoGenAxis_layer%02d_Alt4weighted'%(lay)].SetMaximum(16000)
+    hists['dr2DtoBestAxis_layer%02d'%(lay)] = r.TH1F('h2D_dr2DtoBestAxis_layer%02d'%(lay),'h2D_dr2DtoBestAxis_layer%02d'%(lay),50,0.,50.)
+    hists['dr2DtoBestAxis_layer%02d'%(lay)].SetMaximum(16000)
+    hists['dr2DtoBestAxis_layer%02d_Alt4weighted'%(lay)] = r.TH1F('h2D_dr2DtoBestAxis_layer%02d_Alt4weighted'%(lay),'h2D_dr2DtoBestAxis_layer%02d_Alt4weighted'%(lay),50,0.,50.)
+    hists['dr2DtoBestAxis_layer%02d_Alt4weighted'%(lay)].SetMaximum(16000)
+  for enRadius in enRadii:
+    for megaRadiusFront in megaRadiiFront:
+      for megaRadiusBack in megaRadiiBack:
+        megaNameStr = 'megaClusteringGen_Alt%02d_Fr%02d_Ba%02d'%(int(enRadius),int(megaRadiusFront),int(megaRadiusBack))
+        hists[megaNameStr] = r.TH1F('h2D_%s'%megaNameStr,'h2D_%s'%megaNameStr,100,1.,0.)
+        megaNameStr = megaNameStr.replace('Gen','Best')
+        hists[megaNameStr] = r.TH1F('h2D_%s'%megaNameStr,'h2D_%s'%megaNameStr,100,1.,0.)
+  hists['clusterZvsConeRadius'] = r.TH2F('h2D_clusterZvsConeRadius','h2D_clusterZvsConeRadius',100,300.,500.,100,0.,20.)
+  hists['clusterZvsConeRadiusWide'] = r.TH2F('h2D_clusterZvsConeRadiusWide','h2D_clusterZvsConeRadiusWide',100,300.,500.,100,0.,20.)
+
+  return hists
+
 def initMultiHists(enRadii,scRadii):
   hists = {}
  
@@ -88,12 +113,15 @@ def initMultiHists(enRadii,scRadii):
   hists['twoBestPfEnFrac'] = r.TH1F('hMulti_twoBestPfEnFrac','hMulti_twoBestPfEnFrac',100,1.,0.)
   hists['totalEnFrac'] = r.TH1F('hMulti_totalEnFrac','hMulti_totalEnFrac',100,1.,0.)
   hists['total2DEnFrac'] = r.TH1F('hMulti_total2DEnFrac','hMulti_total2DEnFrac',100,1.,0.)
+  hists['totalSimClusterEnFrac'] = r.TH1F('hMulti_totalSimClusterEnFrac','hMulti_totalSimClusterEnFrac',100,1.,0.)
   hists['totalRechitsInMultisEnFrac'] = r.TH1F('hMulti_totalRechitsInMultisEnFrac','hMulti_totalRechitsInMultisEnFrac',100,1.,0.)
   hists['suggestedEnFrac'] = r.TH1F('hMulti_suggestedEnFrac','hMulti_suggestedEnFrac',100,1.,0.)
   hists['layersInBest'] = r.TH1F('hMulti_layersInBest','hMulti_layersInBest',53,-0.5,52.5)
   hists['layersInBestWeighted'] = r.TH1F('hMulti_layersInBestWeighted','hMulti_layersInBestWeighted',53,-0.5,52.5)
   hists['num2DsInBest'] = r.TH1F('hMulti_num2DsInBest','hMulti_num2DsInBest',53,-0.5,52.5)
   hists['num2DsInBestWeighted'] = r.TH1F('hMulti_num2DsInBestWeighted','hMulti_num2DsInBestWeighted',53,-0.5,52.5)
+  hists['num2DsInMulti'] = r.TH1F('hMulti_num2DsInMulti','hMulti_num2DsInMulti',53,-0.5,52.5)
+  hists['num2DsInMultiWeighted'] = r.TH1F('hMulti_num2DsInMultiWeighted','hMulti_num2DsInMultiWeighted',53,-0.5,52.5)
   hists['hOverEInBest'] = r.TH1F('hMulti_hOverEInBest','hMulti_hOverEInBest',100,0.,0.1)
   hists['hOverEInBestWeighted'] = r.TH1F('hMulti_hOverEInBestWeighted','hMulti_hOverEInBestWeighted',100,0.,0.1)
   hists['maxClusterInBestX'] = r.TH1F('hMulti_maxClusterInBestX','hMulti_hMulti_maxClusterInBestX',100,1.,0.)
@@ -163,14 +191,15 @@ def printHists(canv,hists,outdir):
     canv.cd() 
     setXTitle(key,hist)
     if str(type(hist)) == '<class \'ROOT.TH2F\'>':
-      hist.Draw("colz")
+      if 'ConeRadius' in key: hist.Draw('scat')
+      else: hist.Draw("colz")
     else:
       hist.Draw("hist")
     canv.Print(outdir+hist.GetName()+".pdf")
     canv.Print(outdir+hist.GetName()+".png")
 
-def fitHists(canv,hists,outdir):
-  fitFile = open('Output/fits_%s_Pt%s_Conv%s.txt'%(opts.particleType,opts.ptVal,opts.doConverted),'w')
+def fitHists(canv,hists,outdir,mode='w'):
+  fitFile = open('Output/fits_%s_Pt%s_Conv%s.txt'%(opts.particleType,opts.ptVal,opts.doConverted),mode)
   for key,hist in hists.iteritems():
     canv.cd() 
     setXTitle(key,hist)
@@ -252,6 +281,12 @@ def deltaPhi( phi1, phi2):
   elif( dPhi >  pi): dPhi -= 2.0*pi;
   return dPhi;
 
+def getConeRadius(r0,rq,twodZ,maxval=9999.):
+  depthTerm = rq * (abs(twodZ)-320.7)/(407.8-320.7) #widening cone suggested by Chris
+  val = r0 + depthTerm
+  if val > maxval: return maxval
+  return val
+
 
 def main():
   r.gROOT.SetBatch(True)
@@ -275,6 +310,8 @@ def main():
   #convert comma-separated list of radii into list of floats
   enRadii = [int(val) for val in opts.enRadii.split(',')]
   scRadii = [int(val) for val in opts.scRadii.split(',')]
+  megaRadiiFront = [int(val) for val in opts.megaRadiiFront.split(',')]
+  megaRadiiBack = [int(val) for val in opts.megaRadiiBack.split(',')]
 
   #do the normal set of basic plots
   if opts.doBasics:
@@ -285,6 +322,7 @@ def main():
   #setup hists for each type of object
   genHists   = initGenHists()
   multiHists = initMultiHists(enRadii,scRadii)
+  twodHists  = init2DHists(enRadii,megaRadiiFront,megaRadiiBack)
 
   #loop over entries in tree and actully do things
   for iEntry in range(theTree.GetEntries()):
@@ -336,6 +374,7 @@ def main():
         if simEta*genEta < 0.: continue
         simEnergy = simEnergies[iSim]
         totSimEnergy += simEnergy
+      multiHists['totalSimClusterEnFrac'].Fill(totSimEnergy/genEnergy)
       #print "totSimEnergy",totSimEnergy
 
       #get pfcluster quantities
@@ -384,6 +423,9 @@ def main():
       twodRechits = getattr(theTree,"cluster2d_rechits")
       twodEnergies = getattr(theTree,"cluster2d_energy")
       twodEtas = getattr(theTree,"cluster2d_eta")
+      twodPhis = getattr(theTree,"cluster2d_phi")
+      twodZees = getattr(theTree,"cluster2d_z")
+      twodLayers = getattr(theTree,"cluster2d_layer")
       totalRechitsInMultisEnergy = 0.
       total2Denergy = 0.
       totalAlt2Denergies = {enRadius: 0. for enRadius in enRadii}
@@ -476,6 +518,8 @@ def main():
           bestMultiIndex = iMulti
           bestMultiEnergy = multiEnergy
         multiN2D = len(multi2Ds[iMulti])
+        multiHists['num2DsInMulti'].Fill( multiN2D )
+        multiHists['num2DsInMultiWeighted'].Fill( multiN2D, multiEnergy )
         if multiN2D >= opts.nClus:
           #print "multi with %d 2D being added"%multiN2D
           selectedMultiIndices.append(iMulti)
@@ -520,6 +564,41 @@ def main():
       genDeltaPhiBestZ = 0.2998 * 1. * 3.8 * 0.01*(bestMultiZ-genDvz) * (1./(genPt*cot(2*atan(exp(-1*genEta)))))
       multiHists['drGenBestAtFaceCorr'].Fill( etasPhisZsToDeltaX(genEta,bestMultiEta,genPhi+genDeltaPhiFace,bestMultiPhi,320.,320.) )
       multiHists['drGenBestAtBestZCorr'].Fill( etasPhisZsToDeltaX(genEta,bestMultiEta,genPhi+genDeltaPhiBestZ,bestMultiPhi,bestMultiZ,bestMultiZ) )
+
+      #loop over 2Ds again for new multi/super/megaclustering step
+      megaClusteringEnergiesGen  = { (megaRadiusFront,megaRadiusBack,enRadius): 0. for megaRadiusFront in megaRadiiFront for megaRadiusBack in megaRadiiBack for enRadius in enRadii }
+      megaClusteringEnergiesBest = { (megaRadiusFront,megaRadiusBack,enRadius): 0. for megaRadiusFront in megaRadiiFront for megaRadiusBack in megaRadiiBack for enRadius in enRadii }
+      for i2D in range(len(twodEtas)):
+        twodEta = twodEtas[i2D]
+        if twodEta*genEta<0.: 
+          continue
+        twodEnergy = twodEnergies[i2D]
+        twodEta = twodEtas[i2D]
+        twodPhi = twodPhis[i2D]
+        twodZ = twodZees[i2D]
+        twodLayer = twodLayers[i2D]
+        twodHists['clusterZvsConeRadius'].Fill( twodZ, getConeRadius(1.,7.,twodZ) )
+        twodHists['clusterZvsConeRadiusWide'].Fill( twodZ, getConeRadius(2.,12.,twodZ) )
+        dr2DtoGenAxis = etasPhisZsToDeltaX(twodEta,genEta,twodPhi,genPhi,twodZ,twodZ)
+        dr2DtoBestAxis = etasPhisZsToDeltaX(twodEta,bestMultiEta,twodPhi,bestMultiPhi,twodZ,twodZ)
+        twodHists['dr2DtoGenAxis_layer%02d'%(int(twodLayer))].Fill( dr2DtoGenAxis )
+        twodHists['dr2DtoGenAxis_layer%02d_Alt4weighted'%(int(twodLayer))].Fill( dr2DtoGenAxis, alt2Denergies[i2D][4] )
+        twodHists['dr2DtoBestAxis_layer%02d'%(int(twodLayer))].Fill( dr2DtoBestAxis )
+        twodHists['dr2DtoBestAxis_layer%02d_Alt4weighted'%(int(twodLayer))].Fill( dr2DtoBestAxis, alt2Denergies[i2D][4] )
+        for megaRadiusFront in megaRadiiFront:
+          for megaRadiusBack in megaRadiiBack:
+            #coneRadius = getConeRadius(megaRadiusFront,megaRadiusBack,twodZ) #arguments are initial radius, radius added at back of FH, the z of the cluster, and optionally max value
+            coneRadius = getConeRadius(megaRadiusFront,megaRadiusBack,twodZ,12.) #arguments are initial radius, radius added at back of FH, the z of the cluster, and optionally max value
+            for enRadius in enRadii:
+              if dr2DtoGenAxis  < coneRadius: megaClusteringEnergiesGen[(megaRadiusFront,megaRadiusBack,enRadius)]  += alt2Denergies[i2D][enRadius]
+              if dr2DtoBestAxis < coneRadius: megaClusteringEnergiesBest[(megaRadiusFront,megaRadiusBack,enRadius)] += alt2Denergies[i2D][enRadius]
+      for megaRadiusFront in megaRadiiFront:
+        for megaRadiusBack in megaRadiiBack:
+          for enRadius in enRadii:
+            megaNameStr = 'megaClusteringGen_Alt%02d_Fr%02d_Ba%02d'%(int(enRadius),int(megaRadiusFront),int(megaRadiusBack))
+            twodHists[megaNameStr].Fill( megaClusteringEnergiesGen[(megaRadiusFront,megaRadiusBack,enRadius)] / genEnergy )
+            megaNameStr = megaNameStr.replace('Gen','Best')
+            twodHists[megaNameStr].Fill( megaClusteringEnergiesBest[(megaRadiusFront,megaRadiusBack,enRadius)] / genEnergy )
 
       #quick loop over 2Ds in best multi to get layer info
       twodEnergies = getattr(theTree,"cluster2d_energy")
@@ -613,8 +692,11 @@ def main():
 
   canv = r.TCanvas('canv','canv')
   printHists(canv,multiHists,opts.outDir)
+  printHists(canv,twodHists,opts.outDir)
   fitHists(canv,multiHists,opts.outDir)
+  fitHists(canv,twodHists,opts.outDir,'a')
   writeHists(multiHists,'Output/')
+  writeHists(twodHists,'Output/','UPDATE')
   
   #copy plots across
   if opts.webDir:
