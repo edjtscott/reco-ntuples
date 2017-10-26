@@ -1,7 +1,8 @@
 import ROOT as r
 import os
 import sys
-from math import exp,cos,sin,tan,sqrt,atan,log
+from math import exp,cos,sin,tan,sqrt,atan,atan2,log
+from numpy import array
 
 
 from optparse import OptionParser
@@ -22,6 +23,7 @@ parser.add_option("-n","--nClus",type="int",default=3,help="min number of 2D clu
 parser.add_option("-s","--superClus",type="int",default=30,help="set number of points to scan for superclustering. Default is thirty")
 parser.add_option("-c","--doConverted",type="int",default=0,help="for photons: set to one to only plot unconverted, two for unconverted. Default is zero (all)")
 parser.add_option("-b","--doBasics",dest="doBasics",default=False,action="store_true",help="make basic plots with no cuts applied")
+parser.add_option("--doReweighting",dest="doReweighting",default=False,action="store_true",help="apply reweighting of energies by subdetector for megaclustering")
 parser.add_option("--endText",dest="endText",default="Done! \n",help="text to print at end")
 parser.add_option("-v","--verbosity",type="int",default=0)
 (opts,args) = parser.parse_args()
@@ -133,6 +135,7 @@ def initMultiHists(enRadii,scRadii):
   hists['maxClusterInBestGenDphi'] = r.TH1F('hMulti_maxClusterInBestGenDphi','hMulti_hMulti_maxClusterInBestGenDphi',100,-0.1,0.1)
   hists['maxClusterInBestGenDetaCm'] = r.TH1F('hMulti_maxClusterInBestGenDetaCm','hMulti_hMulti_maxClusterInBestGenDetaCm',100,-0.5,0.5)
   hists['maxClusterInBestGenDphiScaled'] = r.TH1F('hMulti_maxClusterInBestGenDphiScaled','hMulti_hMulti_maxClusterInBestGenDphiScaled',100,-0.1,0.1)
+  hists['deltaRgenBestAxes'] = r.TH1F('hMulti_deltaRgenBestAxes','hMulti_deltaRgenBestAxes',100,1.,0.)
   hists['drGenBestAtFace'] = r.TH1F('hMulti_drGenBestAtFace','hMulti_drGenBestAtFace',100,0.,5.)
   hists['drGenBestAtBestZ'] = r.TH1F('hMulti_drGenBestAtBestZ','hMulti_drGenBestAtBestZ',100,0.,5.)
   hists['drGenBestAtFaceCorr'] = r.TH1F('hMulti_drGenBestAtFaceCorr','hMulti_drGenBestAtFaceCorr',100,0.,5.)
@@ -257,6 +260,8 @@ def deltaX(x1,x2,y1,y2):
   return sqrt( dX*dX + dY*dY );
 
 def etasPhisZsToDeltaX(eta1,eta2,phi1,phi2,z1,z2):
+  if abs(eta1) < 0.000001 or abs(eta2) < 0.000001:
+    return 0.
   t1 = exp( -1. * eta1 );
   x1 = z1 * 2. * t1 * cos(phi1) / ( 1. - t1*t1 );
   y1 = z1 * 2. * t1 * sin(phi1) / ( 1. - t1*t1 );
@@ -277,9 +282,14 @@ def thetaToEta(val):
 def deltaPhi( phi1, phi2):
   dPhi = phi1 - phi2;
   pi = 3.14159265;
-  if     ( dPhi <=-pi): dPhi += 2.0*pi;
-  elif( dPhi >  pi): dPhi -= 2.0*pi;
+  if   dPhi <= -1.*pi: dPhi += 2.*pi;
+  elif dPhi > pi:      dPhi -= 2.*pi;
   return dPhi;
+
+def deltaR( eta1, eta2, phi1, phi2 ):
+  dPhi = deltaPhi(phi1,phi2)
+  dEta = eta1 - eta2
+  return sqrt( dPhi*dPhi + dEta*dEta )
 
 def getConeRadius(r0,rq,twodZ,maxval=9999.):
   depthTerm = rq * (abs(twodZ)-320.7)/(407.8-320.7) #widening cone suggested by Chris
@@ -323,10 +333,12 @@ def main():
   genHists   = initGenHists()
   multiHists = initMultiHists(enRadii,scRadii)
   twodHists  = init2DHists(enRadii,megaRadiiFront,megaRadiiBack)
+  #for the optimisation
+  #optimiseFile = open('Output/optimise_%s_Pt%s_Conv%s.txt'%(opts.particleType,opts.ptVal,opts.doConverted),'w')
 
   #loop over entries in tree and actully do things
   for iEntry in range(theTree.GetEntries()):
-  #for iEntry in range(1):
+  #for iEntry in range(5):
     #setup gen values
     if iEntry%100==0 or iEntry==0: print "Processing entry %d"%iEntry
     theTree.GetEntry(iEntry)
@@ -431,6 +443,10 @@ def main():
       totalAlt2Denergies = {enRadius: 0. for enRadius in enRadii}
       #alt2Denergies = [{enRadius: 0. for enRadius in enRadii}] * len(twodEtas)
       alt2Denergies = [{enRadius: 0. for enRadius in enRadii} for twodEta in twodEtas]
+      alt2DsumWX = [0. for i in range(len(twodEtas))] #just use 3cm for now
+      alt2DsumWY = [0. for i in range(len(twodEtas))] #just use 3cm for now
+      alt2DsumWZ = [0. for i in range(len(twodEtas))] #just use 3cm for now
+      alt2DsumW  = [0. for i in range(len(twodEtas))] #just use 3cm for now
       #then loop over to get total energy estimate, various ways
       #new version takes sum of rechits within r cm of the highest rechit in the layer cluster
       for i2D in range(len(twodEtas)):
@@ -438,6 +454,7 @@ def main():
         if twodEta*genEta<0.: 
           continue
         total2Denergy += twodEnergies[i2D]
+        #print 'twodEnergy',twodEnergies[i2D]
         recIndices = twodRechits[i2D]
         highestRecEnergy = -9999.
         highestRecIndex = -9999.
@@ -475,11 +492,77 @@ def main():
             if drRecBest < enRadius:
               alt2Denergies[i2D][enRadius] += recEnergy
               totalAlt2Denergies[enRadius] += recEnergy
+          if drRecBest < 3.: #just use 3cm for now
+            alt2DsumWX[i2D] += recX*recEnergy
+            alt2DsumWY[i2D] += recY*recEnergy
+            alt2DsumWZ[i2D] += recZ*recEnergy
+            alt2DsumW[i2D]  += recEnergy
       #end loop over 2Ds
       for enRadius in enRadii: 
         multiHists['total2DEnFrac_Alt%s'%str(enRadius)].Fill( totalAlt2Denergies[enRadius] / genEnergy )
       multiHists['total2DEnFrac'].Fill( total2Denergy / genEnergy )
       multiHists['totalRechitsInMultisEnFrac'].Fill( totalRechitsInMultisEnergy / genEnergy )
+
+
+      #the new axis calcuation (failing in PU atm) starts here
+      doNewAxis = False
+      #doNewAxis = True
+      if doNewAxis:
+        sorted2Denergies = []
+        #get sorted list of 6cm 2D energies (correct endcap only)
+        for i2D in range(len(twodEtas)):
+          if genEta * twodEtas[i2D]>0.:
+            sorted2Denergies.append( (i2D,alt2Denergies[i2D][6]) )
+        sorted2Denergies = sorted( sorted2Denergies, key=lambda thePair: thePair[1], reverse=True )
+        #plan is to loop over these, define an axis using eg the five highest (in correct endcap)
+        #then use that axis for megaclustering
+        #caveat: might want to ensure that all five are within some cone (ie disclude outliers) 
+        stableAxis = False
+        axisEta = 0.
+        axisPhi = 0.
+        axisBlacklist = []
+        axisIterations = 0
+        while not stableAxis and len(sorted2Denergies) >= 5:
+          axisIterations += 1
+          if axisIterations > 1000:
+            axisEta = 0.
+            axisPhi = 0.
+            break
+          axisComponents = []
+          axisSumWeta = 0.
+          axisSumWphi = 0.
+          axisSumW = 0.
+          axisCounter = 0
+          for i2D,newEnergy in sorted2Denergies:
+            if i2D in axisBlacklist: continue
+            newX = 0.
+            newY = 0.
+            newZ = 0.
+            if alt2DsumW[i2D] > 0.: 
+              newX = alt2DsumWX[i2D] / alt2DsumW[i2D]
+              newY = alt2DsumWY[i2D] / alt2DsumW[i2D]
+              newZ = alt2DsumWZ[i2D] / alt2DsumW[i2D]
+            newEta = (newZ/abs(newZ)) * thetaToEta( atan( sqrt(newX*newX+newY*newY) / abs(newZ) ) )
+            if newEta*genEta < 0.: continue
+            newPhi = atan2(newY,newX)
+            axisComponents.append( (i2D, newEta, newPhi) )
+            axisSumWeta += newEta*newEnergy
+            axisSumWphi += newPhi*newEnergy
+            axisSumW += newEnergy
+            axisCounter += 1
+            if axisCounter==5: break
+          axisEta = axisSumWeta / axisSumW
+          axisPhi = axisSumWphi / axisSumW
+          for i2D, newEta, newPhi in axisComponents:
+            stableAxis = True
+            newDR = deltaR( axisEta, newEta, axisPhi, newPhi)
+            if newDR > 0.4: #FIXME is this the best val?
+            #if newDR > 0.1: #FIXME is this the best val?
+              axisBlacklist.append(i2D)
+              stableAxis = False
+              break
+        #end axis generation
+          
 
       #get multi quantities
       multiEtas = getattr(theTree,"multiclus_eta")
@@ -488,8 +571,8 @@ def main():
       multiEnergies = getattr(theTree,"multiclus_energy")
       multiZees = getattr(theTree,"multiclus_z")
       multi2Ds = getattr(theTree,"multiclus_cluster2d")
-
       #setup multi values, collections
+      sortedMultiEnergies = []
       bestMultiIndex = -9999
       bestMultiEnergy = -9999.
       totalMultiEnergy = 0.
@@ -499,7 +582,6 @@ def main():
       #altMultiEnergies = [{enRadius: 0. for enRadius in enRadii}] * len(multiEtas)
       altMultiEnergies = [{enRadius: 0. for enRadius in enRadii} for multiEta in multiEtas]
       totalAltMultiEnergies = { enRadius: 0. for enRadius in enRadii }
-
       #loop over multis
       for iMulti in range(multiEtas.size()):
         #check same endcap
@@ -510,6 +592,7 @@ def main():
 
         #analysis
         multiEnergy = multiEnergies[iMulti]
+        sortedMultiEnergies.append( (iMulti,multiEnergy) )
         multiPt = multiPts[iMulti]
         multiPhi = multiPhis[iMulti]
         multiZ = multiZees[iMulti]
@@ -532,16 +615,31 @@ def main():
           for enRadius in enRadii:
             altMultiEnergies[iMulti][enRadius] += alt2Denergies[i2D][enRadius]
             totalAltMultiEnergies[enRadius] += alt2Denergies[i2D][enRadius]
-
       #end multi loop
       if nMultis == 0:
         print "ALERT: zero multiclusters found in endcap"
         continue
+      #require that the best multicluster is within dR ~ 0.1 of the gen
+      #so will redefine the best multi here, using sorted list (default energy for now)
+      nMultiIts = 0
+      sortedMultiEnergies = sorted(sortedMultiEnergies, key=lambda thePair: thePair[1], reverse=True)
+      for iMulti,theEnergy in sortedMultiEnergies:
+        candEta = multiEtas[iMulti]
+        if candEta*genEta<0.: continue
+        nMultiIts += 1
+        candPhi = multiPhis[iMulti]
+        candDeltaR = deltaR(candEta,genEta,candPhi,genPhi)
+        #print '%gth multi: deltaR, energy   %1.2f %1.2f'%(nMultiIts,candDeltaR,theEnergy)
+        if candDeltaR < 0.1:
+          bestMultiIndex = iMulti
+          bestMultiEnergy = theEnergy
+          break
+      #basic hists
       multiHists['nMultis'].Fill(nMultis)
       multiHists['nSeedMultis'].Fill(len(seedMultiIndices))
       multiHists['bestEnFrac'].Fill(bestMultiEnergy/genEnergy)
       multiHists['totalEnFrac'].Fill(totalMultiEnergy/genEnergy)
-
+      #best multi quantities
       bestMultiZ = multiZees[bestMultiIndex]
       bestMultiPhi = multiPhis[bestMultiIndex]
       bestMultiEta = multiEtas[bestMultiIndex]
@@ -550,13 +648,15 @@ def main():
       bestMultiRho = deltaX( etaPhiZtoX(bestMultiEta,bestMultiPhi,bestMultiZ), 0., etaPhiZtoY(bestMultiEta,bestMultiPhi,bestMultiZ), 0. )
       bestMultiR = sqrt( bestMultiZ*bestMultiZ + bestMultiRho*bestMultiRho )
       bestMulti2Ds = multi2Ds[bestMultiIndex]
-
+      #misc hists
       for enRadius in enRadii:
         multiHists['bestEnFrac_Alt%s'%str(enRadius)].Fill(altMultiEnergies[bestMultiIndex][enRadius]/genEnergy)
         multiHists['totalEnFrac_Alt%s'%str(enRadius)].Fill(totalAltMultiEnergies[enRadius]/genEnergy)
-
       multiHists['num2DsInBest'].Fill(len(bestMulti2Ds))
       multiHists['num2DsInBestWeighted'].Fill(len(bestMulti2Ds),bestMultiEnergy)
+      multiHists['deltaRgenBestAxes'].Fill( deltaR(genEta,bestMultiEta,genPhi,bestMultiPhi) )
+      #print 'genBestDeltaR',deltaR(genEta,bestMultiEta,genPhi,bestMultiPhi)
+      #print ''
       multiHists['drGenBestAtFace'].Fill( etasPhisZsToDeltaX(genEta,bestMultiEta,genPhi,bestMultiPhi,320.,320.) )
       multiHists['drGenBestAtBestZ'].Fill( etasPhisZsToDeltaX(genEta,bestMultiEta,genPhi,bestMultiPhi,bestMultiZ,bestMultiZ) )
       #dPhi = q*B*dZ/pZ; prefactor is the conversion of GeV to normal units NB DOES NOT WORK
@@ -564,41 +664,34 @@ def main():
       genDeltaPhiBestZ = 0.2998 * 1. * 3.8 * 0.01*(bestMultiZ-genDvz) * (1./(genPt*cot(2*atan(exp(-1*genEta)))))
       multiHists['drGenBestAtFaceCorr'].Fill( etasPhisZsToDeltaX(genEta,bestMultiEta,genPhi+genDeltaPhiFace,bestMultiPhi,320.,320.) )
       multiHists['drGenBestAtBestZCorr'].Fill( etasPhisZsToDeltaX(genEta,bestMultiEta,genPhi+genDeltaPhiBestZ,bestMultiPhi,bestMultiZ,bestMultiZ) )
+      #axis debug info
+      #print 'genEta, bestEta, axisEta:  ', genEta, bestMultiEta, axisEta
+      #print 'genPhi, bestPhi, axisPhi:  ', genPhi, bestMultiPhi, axisPhi
+      #print ''
+      #print 'gen    eta, phi  = %1.2f, %1.2f   '% (genEta, genPhi)
+      #print 'best   eta, phi  = %1.2f, %1.2f   '% (bestMultiEta, bestMultiPhi)
+      #print 'len(bestMulti2Ds)',len(bestMulti2Ds)
+      #print ''
+      #veryTempPrintCounter = 0
+      #for veryTempPrintI,theSortedEnergy in sorted2Denergies:
+      #  if alt2DsumW[veryTempPrintI] > 0.:
+      #    veryTempPrintX = alt2DsumWX[veryTempPrintI] / alt2DsumW[veryTempPrintI]
+      #    veryTempPrintY = alt2DsumWY[veryTempPrintI] / alt2DsumW[veryTempPrintI]
+      #    veryTempPrintZ = alt2DsumWZ[veryTempPrintI] / alt2DsumW[veryTempPrintI]
+      #    veryTempPrintEta = (veryTempPrintZ/abs(veryTempPrintZ)) * thetaToEta( atan( sqrt(veryTempPrintX*veryTempPrintX+veryTempPrintY*veryTempPrintY) / abs(veryTempPrintZ) ) )
+      #    veryTempPrintPhi = atan2(veryTempPrintY,veryTempPrintX)
+      #  else:
+      #    veryTempPrintEta = -999
+      #    veryTempPrintPhi = -999
+      #  print '%gth 2D eta, phi  = %1.2f, %1.2f    %1.2f, %1.2f    %1.2f, %1.2f, layer %g'%(veryTempPrintCounter,twodEtas[veryTempPrintI],twodPhis[veryTempPrintI],twodEnergies[veryTempPrintI],theSortedEnergy,veryTempPrintEta,veryTempPrintPhi,twodLayers[veryTempPrintI])
+      #  veryTempPrintCounter += 1
+      #  if veryTempPrintCounter >= 10: break
+      #print ''
+      #print ''
+      #print ''
+      #print ''
+      #print ''
 
-      #loop over 2Ds again for new multi/super/megaclustering step
-      megaClusteringEnergiesGen  = { (megaRadiusFront,megaRadiusBack,enRadius): 0. for megaRadiusFront in megaRadiiFront for megaRadiusBack in megaRadiiBack for enRadius in enRadii }
-      megaClusteringEnergiesBest = { (megaRadiusFront,megaRadiusBack,enRadius): 0. for megaRadiusFront in megaRadiiFront for megaRadiusBack in megaRadiiBack for enRadius in enRadii }
-      for i2D in range(len(twodEtas)):
-        twodEta = twodEtas[i2D]
-        if twodEta*genEta<0.: 
-          continue
-        twodEnergy = twodEnergies[i2D]
-        twodEta = twodEtas[i2D]
-        twodPhi = twodPhis[i2D]
-        twodZ = twodZees[i2D]
-        twodLayer = twodLayers[i2D]
-        twodHists['clusterZvsConeRadius'].Fill( twodZ, getConeRadius(1.,7.,twodZ) )
-        twodHists['clusterZvsConeRadiusWide'].Fill( twodZ, getConeRadius(2.,12.,twodZ) )
-        dr2DtoGenAxis = etasPhisZsToDeltaX(twodEta,genEta,twodPhi,genPhi,twodZ,twodZ)
-        dr2DtoBestAxis = etasPhisZsToDeltaX(twodEta,bestMultiEta,twodPhi,bestMultiPhi,twodZ,twodZ)
-        twodHists['dr2DtoGenAxis_layer%02d'%(int(twodLayer))].Fill( dr2DtoGenAxis )
-        twodHists['dr2DtoGenAxis_layer%02d_Alt4weighted'%(int(twodLayer))].Fill( dr2DtoGenAxis, alt2Denergies[i2D][4] )
-        twodHists['dr2DtoBestAxis_layer%02d'%(int(twodLayer))].Fill( dr2DtoBestAxis )
-        twodHists['dr2DtoBestAxis_layer%02d_Alt4weighted'%(int(twodLayer))].Fill( dr2DtoBestAxis, alt2Denergies[i2D][4] )
-        for megaRadiusFront in megaRadiiFront:
-          for megaRadiusBack in megaRadiiBack:
-            #coneRadius = getConeRadius(megaRadiusFront,megaRadiusBack,twodZ) #arguments are initial radius, radius added at back of FH, the z of the cluster, and optionally max value
-            coneRadius = getConeRadius(megaRadiusFront,megaRadiusBack,twodZ,12.) #arguments are initial radius, radius added at back of FH, the z of the cluster, and optionally max value
-            for enRadius in enRadii:
-              if dr2DtoGenAxis  < coneRadius: megaClusteringEnergiesGen[(megaRadiusFront,megaRadiusBack,enRadius)]  += alt2Denergies[i2D][enRadius]
-              if dr2DtoBestAxis < coneRadius: megaClusteringEnergiesBest[(megaRadiusFront,megaRadiusBack,enRadius)] += alt2Denergies[i2D][enRadius]
-      for megaRadiusFront in megaRadiiFront:
-        for megaRadiusBack in megaRadiiBack:
-          for enRadius in enRadii:
-            megaNameStr = 'megaClusteringGen_Alt%02d_Fr%02d_Ba%02d'%(int(enRadius),int(megaRadiusFront),int(megaRadiusBack))
-            twodHists[megaNameStr].Fill( megaClusteringEnergiesGen[(megaRadiusFront,megaRadiusBack,enRadius)] / genEnergy )
-            megaNameStr = megaNameStr.replace('Gen','Best')
-            twodHists[megaNameStr].Fill( megaClusteringEnergiesBest[(megaRadiusFront,megaRadiusBack,enRadius)] / genEnergy )
 
       #quick loop over 2Ds in best multi to get layer info
       twodEnergies = getattr(theTree,"cluster2d_energy")
@@ -612,12 +705,21 @@ def main():
       maxClusterInBestEnergy = -9999.
       bestEmEnergy = 0.
       bestHadEnergy = 0.
+      #also recalculate the best multicluster axis using limited range (currently 3cm) position measurement
+      recalcSumWX = 0.
+      recalcSumWY = 0.
+      recalcSumWZ = 0.
+      recalcSumW  = 0.
       for iBest2D in range(len(bestMulti2Ds)):
         twodIndex = bestMulti2Ds[iBest2D]
         twodLayer = twodLayers[twodIndex]
         twodEnergy = twodEnergies[twodIndex]
         multiHists['layersInBest'].Fill(twodLayer)
         multiHists['layersInBestWeighted'].Fill(twodLayer,twodEnergy)
+        recalcSumWX += alt2DsumWX[twodIndex]
+        recalcSumWY += alt2DsumWY[twodIndex]
+        recalcSumWZ += alt2DsumWZ[twodIndex]
+        recalcSumW  += alt2DsumW[twodIndex]
         if twodEnergy>maxClusterInBestEnergy:
           maxClusterInBestEnergy = twodEnergy
           maxClusterInBestIndex = twodIndex
@@ -626,6 +728,7 @@ def main():
         elif twodLayer>28:
           bestHadEnergy += twodEnergy
       #end quick loop over 2Ds
+      #fill max cluster hists
       maxClusterInBestX = twodXs[maxClusterInBestIndex]
       maxClusterInBestY = twodYs[maxClusterInBestIndex]
       maxClusterInBestZ = twodZs[maxClusterInBestIndex]
@@ -642,7 +745,7 @@ def main():
       multiHists['maxClusterInBestGenDrho'].Fill( maxClusterInBestGenDrho )
       multiHists['maxClusterInBestGenDeta'].Fill( maxClusterInBestGenDeta )
       multiHists['maxClusterInBestGenDphi'].Fill( maxClusterInBestGenDphi )
-      
+      #misc hists
       recipRho = 1. / deltaX( etaPhiZtoX(1.5,0.,320.), 0., etaPhiZtoY(1.5,0.,320.), 0. )
       maxClusterInBestRho = deltaX( etaPhiZtoX(maxClusterInBestEta,maxClusterInBestPhi,maxClusterInBestZ), 0., etaPhiZtoY(maxClusterInBestEta,maxClusterInBestPhi,maxClusterInBestZ), 0. )
       maxClusterInBestR = sqrt( maxClusterInBestZ*maxClusterInBestZ + maxClusterInBestRho*maxClusterInBestRho )
@@ -660,11 +763,90 @@ def main():
       else:
         multiHists['hOverEInBest'].Fill(0.099)
         multiHists['hOverEInBestWeighted'].Fill(0.099, bestMultiEnergy)
+      #now for the recalculated best multi axis
+      bestMultiRecalcX = recalcSumWX / recalcSumW
+      bestMultiRecalcY = recalcSumWY / recalcSumW
+      bestMultiRecalcZ = recalcSumWZ / recalcSumW
+      bestMultiRecalcEta = (bestMultiRecalcZ/abs(bestMultiRecalcZ)) * thetaToEta( atan( sqrt(bestMultiRecalcX*bestMultiRecalcX+bestMultiRecalcY*bestMultiRecalcY) / abs(bestMultiRecalcZ) ) )
+      bestMultiRecalcPhi = atan2(bestMultiRecalcY,bestMultiRecalcX)
+      #print 'genEta, bestMultiEta, bestMultiRecalcEta',genEta, bestMultiEta, bestMultiRecalcEta
+      #print 'genPhi, bestMultiPhi, bestMultiRecalcPhi',genPhi, bestMultiPhi, bestMultiRecalcPhi
+      #print ''
+
+
+      #loop over 2Ds again for new multi/super/megaclustering step
+      optimiseEEenergy = 0.
+      optimiseFHenergy = 0.
+      optimiseBHenergy = 0.
+      megaClusteringEnergiesGen  = { (megaRadiusFront,megaRadiusBack,enRadius): 0. for megaRadiusFront in megaRadiiFront for megaRadiusBack in megaRadiiBack for enRadius in enRadii }
+      megaClusteringEnergiesBest = { (megaRadiusFront,megaRadiusBack,enRadius): 0. for megaRadiusFront in megaRadiiFront for megaRadiusBack in megaRadiiBack for enRadius in enRadii }
+      for i2D in range(len(twodEtas)):
+        twodEta = twodEtas[i2D]
+        if twodEta*genEta<0.: 
+          continue
+        twodEnergy = twodEnergies[i2D]
+        twodEta = twodEtas[i2D]
+        twodPhi = twodPhis[i2D]
+        twodZ = twodZees[i2D]
+        twodLayer = twodLayers[i2D]
+        twodHists['clusterZvsConeRadius'].Fill( twodZ, getConeRadius(1.,7.,twodZ) )
+        twodHists['clusterZvsConeRadiusWide'].Fill( twodZ, getConeRadius(2.,12.,twodZ) )
+        dr2DtoGenAxis = etasPhisZsToDeltaX(twodEta,genEta,twodPhi,genPhi,twodZ,twodZ)
+        dr2DtoBestAxis = etasPhisZsToDeltaX(twodEta,bestMultiEta,twodPhi,bestMultiPhi,twodZ,twodZ) #this is relative to default best multi axis (now matched to gen with deltaR < 0.1)
+        #if not alt2DsumW[i2D] > 0.: #FIXME don't want this for 'normal' plots, only with axis recalc
+        #  continue
+        #newX = alt2DsumWX[i2D] / alt2DsumW[i2D]
+        #newY = alt2DsumWY[i2D] / alt2DsumW[i2D]
+        #newZ = alt2DsumWZ[i2D] / alt2DsumW[i2D]
+        #newEta = (newZ/abs(newZ)) * thetaToEta( atan( sqrt(newX*newX+newY*newY) / abs(newZ) ) )
+        #newPhi = atan2(newY,newX)
+        #dr2DtoBestAxis = etasPhisZsToDeltaX(newEta,axisEta,newPhi,axisPhi,newZ,newZ) #this one is relative to new axis
+        #dr2DtoBestAxis = etasPhisZsToDeltaX(newEta,bestMultiRecalcEta,newPhi,bestMultiRecalcPhi,newZ,newZ) #and this one relative to recalculated best multi axis
+        #print 'dr2DtoGenAxis',dr2DtoGenAxis
+        #print 'dr2DtoBestAxis',dr2DtoBestAxis
+        #print ''
+        #print 'twodEta, newEta:  ',twodEta,newEta
+        #print 'twodPhi, newPhi:  ',twodPhi,newPhi
+        #print 'twodZ,   newZ:    ',twodZ,newZ
+        #print ''
+        twodHists['dr2DtoGenAxis_layer%02d'%(int(twodLayer))].Fill( dr2DtoGenAxis )
+        twodHists['dr2DtoGenAxis_layer%02d_Alt4weighted'%(int(twodLayer))].Fill( dr2DtoGenAxis, alt2Denergies[i2D][4] )
+        twodHists['dr2DtoBestAxis_layer%02d'%(int(twodLayer))].Fill( dr2DtoBestAxis )
+        twodHists['dr2DtoBestAxis_layer%02d_Alt4weighted'%(int(twodLayer))].Fill( dr2DtoBestAxis, alt2Denergies[i2D][4] )
+        for megaRadiusFront in megaRadiiFront:
+          for megaRadiusBack in megaRadiiBack:
+            coneRadius = getConeRadius(megaRadiusFront,megaRadiusBack,twodZ) #arguments are initial radius, radius added at back of FH, the z of the cluster, and optionally max value
+            #coneRadius = getConeRadius(megaRadiusFront,megaRadiusBack,twodZ,12.) #arguments are initial radius, radius added at back of FH, the z of the cluster, and optionally max value
+            for enRadius in enRadii:
+              if dr2DtoGenAxis  < coneRadius: 
+                if not opts.doReweighting: megaClusteringEnergiesGen[(megaRadiusFront,megaRadiusBack,enRadius)]  += alt2Denergies[i2D][enRadius]
+                elif   twodLayer <= 28:    megaClusteringEnergiesGen[(megaRadiusFront,megaRadiusBack,enRadius)]  += 1.02 * alt2Denergies[i2D][enRadius]
+                elif   twodLayer <= 40:    megaClusteringEnergiesGen[(megaRadiusFront,megaRadiusBack,enRadius)]  += 0.86 * alt2Denergies[i2D][enRadius]
+                elif   twodLayer <= 52:    megaClusteringEnergiesGen[(megaRadiusFront,megaRadiusBack,enRadius)]  += 1.12 * alt2Denergies[i2D][enRadius]
+              if dr2DtoBestAxis < coneRadius:
+                if not opts.doReweighting: megaClusteringEnergiesBest[(megaRadiusFront,megaRadiusBack,enRadius)]  += alt2Denergies[i2D][enRadius]
+                elif   twodLayer <= 28:    megaClusteringEnergiesBest[(megaRadiusFront,megaRadiusBack,enRadius)]  += 1.02 * alt2Denergies[i2D][enRadius]
+                elif   twodLayer <= 40:    megaClusteringEnergiesBest[(megaRadiusFront,megaRadiusBack,enRadius)]  += 0.86 * alt2Denergies[i2D][enRadius]
+                elif   twodLayer <= 52:    megaClusteringEnergiesBest[(megaRadiusFront,megaRadiusBack,enRadius)]  += 1.12 * alt2Denergies[i2D][enRadius]
+        #per-subdetector for optimisation
+        if dr2DtoBestAxis<getConeRadius(3,10,twodZ):
+          if   twodLayer <= 28: optimiseEEenergy += alt2Denergies[i2D][6]
+          elif twodLayer <= 40: optimiseFHenergy += alt2Denergies[i2D][6]
+          elif twodLayer <= 52: optimiseBHenergy += alt2Denergies[i2D][6]
+          
+      for megaRadiusFront in megaRadiiFront:
+        for megaRadiusBack in megaRadiiBack:
+          for enRadius in enRadii:
+            megaNameStr = 'megaClusteringGen_Alt%02d_Fr%02d_Ba%02d'%(int(enRadius),int(megaRadiusFront),int(megaRadiusBack))
+            twodHists[megaNameStr].Fill( megaClusteringEnergiesGen[(megaRadiusFront,megaRadiusBack,enRadius)] / genEnergy )
+            megaNameStr = megaNameStr.replace('Gen','Best')
+            twodHists[megaNameStr].Fill( megaClusteringEnergiesBest[(megaRadiusFront,megaRadiusBack,enRadius)] / genEnergy )
+      #optimiseFile.write('%1.5f, %1.5f, %1.5f, %1.5f\n'%(optimiseEEenergy,optimiseFHenergy,optimiseBHenergy,genEnergy))
+
 
       #setup superclustering
       superAltEnergies = {(scRadius,enRadius): altMultiEnergies[bestMultiIndex][enRadius] for enRadius in enRadii for scRadius in scRadii}
       #print 'superAltEnergies',superAltEnergies
-
       #loop over selected multis again for superclustering
       #for hadrons just use 'simple' deltaX superclustering
       for iSel in selectedMultiIndices:
@@ -696,7 +878,9 @@ def main():
   fitHists(canv,multiHists,opts.outDir)
   fitHists(canv,twodHists,opts.outDir,'a')
   writeHists(multiHists,'Output/')
-  writeHists(twodHists,'Output/','UPDATE')
+  #writeHists(twodHists,'Output/','UPDATE')
+  writeHists(twodHists,'Output/')
+  #optimiseFile.close()
   
   #copy plots across
   if opts.webDir:

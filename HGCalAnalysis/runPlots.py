@@ -1,7 +1,13 @@
 import os
 #passName = "Pass25"
 #passName = "Pass25a"
-passName = "Pass25_Cap12"
+#passName = "Pass25_Cap12"
+#passName = "Pass25b"
+#passName = "Pass25_NewAxis"
+#passName = "Pass25_RecalcAxis"
+#passName = "Pass25_matchedBestMulti"
+#passName = "Pass25_ForOptimisation"
+passName = "Pass25_Reweighted"
 
 #particles = ["Photon","Pion"]
 particles = ["Pion"]
@@ -22,7 +28,9 @@ ptvals = ["25"]
 #names = {"Photon":["LogWeightingOn","LogWeightingOff","DropNoMultis"],"Pion":["D17_255_225"],"Electron":["D17"]}
 #names = {"Photon":["93X"],"Pion":["93X"],"Electron":["93X"]}
 #names = {"Photon":["93X"],"Pion":["93XDropNoMultis","93X"],"Electron":["93X"]}
-names = {"Photon":["93X"],"Pion":["93X_FH4cm","93X"],"Electron":["93X"]}
+#names = {"Photon":["93X"],"Pion":["93X_FH4cm","93X"],"Electron":["93X"]}
+#names = {"Photon":["93X"],"Pion":["93X"],"Electron":["93X"]}
+names = {"Photon":["93X"],"Pion":["93X_PU140"],"Electron":["93X"]}
 #prenames = ["","PU200_"]
 #prenames = ["PU200_"]
 prenames = [""]
@@ -53,7 +61,10 @@ for particle in particles:
         web = "/afs/cern.ch/user/e/escott/www/HGCclustering/%s/%s/%s_Pt%s/"%(passName,name,particle,ptval)
         if 'Pion' in particle:
           #os.system("python plotHGCal_HADsuper.py -f %s -w %s -p %s -m %s -c 0"%(infile,web,particle,ptval))
-          os.system("python plotHGCal_HADsuper.py -f %s -w %s -p %s -m %s -c 1"%(infile,web,particle,ptval))
+
+          #os.system("python plotHGCal_HADsuper.py -f %s -w %s -p %s -m %s -c 1"%(infile,web,particle,ptval))
+          os.system("python plotHGCal_HADsuper.py -f %s -w %s -p %s -m %s -c 1 --doReweighting"%(infile,web,particle,ptval))
+
           #os.system("python plotHGCal_HADsuper.py -f %s -w %s -p %s -m %s -c 1 --nClus 0"%(infile,web,particle,ptval))
           #os.system("python plotHGCal_HADsuper.py -f %s -w %s -p %s -m %s -c 2"%(infile,web,particle,ptval))
 
